@@ -15,16 +15,15 @@ public class ArrayListDequeTest {
      * && is the "and" operation. */
     public void addIsEmptySizeTest() {
 
-        System.out.println("Make sure to uncomment the lines below (and delete this print statement).");
-        ArrayListDeque<String> lld1 = new ArrayListDeque<String>();
+        ArrayListDeque<String> lld1 = new ArrayListDeque<>();
 
-		assertTrue("A newly initialized LLDeque should be empty", lld1.isEmpty());
+		assertTrue(lld1.isEmpty());
 		lld1.addFirst("front");
 
 		// The && operator is the same as "and" in Python.
 		// It's a binary operator that returns true if both arguments true, and false otherwise.
         assertEquals(1, lld1.size());
-        assertFalse("lld1 should now contain 1 item", lld1.isEmpty());
+        assertFalse(lld1.isEmpty());
 
 		lld1.addLast("middle");
 		assertEquals(2, lld1.size());
@@ -40,25 +39,23 @@ public class ArrayListDequeTest {
     /** Adds an item, then removes an item, and ensures that dll is empty afterwards. */
     public void addRemoveTest() {
 
-        System.out.println("Make sure to uncomment the lines below (and delete this print statement).");
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<Integer>();
+        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
 		// should be empty
-		assertTrue("lld1 should be empty upon initialization", lld1.isEmpty());
+		assertTrue(lld1.isEmpty());
 
 		lld1.addFirst(10);
 		// should not be empty
-		assertFalse("lld1 should contain 1 item", lld1.isEmpty());
+		assertFalse(lld1.isEmpty());
 
 		lld1.removeFirst();
 		// should be empty
-		assertTrue("lld1 should be empty after removal", lld1.isEmpty());
+		assertTrue(lld1.isEmpty());
     }
 
     @Test
     /* Tests removing from an empty deque */
     public void removeEmptyTest() {
 
-        System.out.println("Make sure to uncomment the lines below (and delete this print statement).");
         ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
         lld1.addFirst(3);
 
@@ -79,9 +76,9 @@ public class ArrayListDequeTest {
     /* Check if you can create LinkedListDeques with different parameterized types*/
     public void multipleParamTest() {
 
-        ArrayListDeque<String> lld1 = new ArrayListDeque<String>();
-        ArrayListDeque<Double> lld2 = new ArrayListDeque<Double>();
-        ArrayListDeque<Boolean> lld3 = new ArrayListDeque<Boolean>();
+        ArrayListDeque<String> lld1 = new ArrayListDeque<>();
+        ArrayListDeque<Double> lld2 = new ArrayListDeque<>();
+        ArrayListDeque<Boolean> lld3 = new ArrayListDeque<>();
 
         lld1.addFirst("string");
         lld2.addFirst(3.14159);
@@ -96,13 +93,12 @@ public class ArrayListDequeTest {
     /* check if null is return when removing from an empty LinkedListDeque. */
     public void emptyNullReturnTest() {
 
-        System.out.println("Make sure to uncomment the lines below (and delete this print statement).");
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<Integer>();
+        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
 
         boolean passed1 = false;
         boolean passed2 = false;
-        assertEquals("Should return null when removeFirst is called on an empty Deque,", null, lld1.removeFirst());
-        assertEquals("Should return null when removeLast is called on an empty Deque,", null, lld1.removeLast());
+        assertEquals(null, lld1.removeFirst());
+        assertEquals(null, lld1.removeLast());
 
     }
 
@@ -110,18 +106,17 @@ public class ArrayListDequeTest {
     /* Add large number of elements to deque; check if order is correct. */
     public void bigLLDequeTest() {
 
-        System.out.println("Make sure to uncomment the lines below (and delete this print statement).");
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<Integer>();
-        for (int i = 0; i < 1000000; i++) {
+        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
+        for (int i = 0; i < 8; i++) {
             lld1.addLast(i);
         }
 
-        for (double i = 0; i < 500000; i++) {
-            assertEquals("Should have the same value", i, (double) lld1.removeFirst(), 0.0);
+        for (double i = 0; i < 4; i++) {
+            assertEquals(i, (double) lld1.removeFirst(), 0.0);
         }
 
-        for (double i = 999999; i > 500000; i--) {
-            assertEquals("Should have the same value", i, (double) lld1.removeLast(), 0.0);
+        for (double i = 7; i >= 4; i--) {
+            assertEquals(i, (double) lld1.removeLast(), 0.0);
         }
 
     }
@@ -129,10 +124,10 @@ public class ArrayListDequeTest {
     @Test
     public void getTest() {
         ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
-        for (int i = 0; i < 5000; i++) {
+        for (int i = 0; i < 8; i++) {
             lld1.addLast(i);
         }
-        for (int i = 0; i < 5000; i++) {
+        for (int i = 0; i < 8; i++) {
             assertEquals(i, (int) lld1.get(i));
         }
     }
