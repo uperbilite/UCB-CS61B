@@ -6,7 +6,7 @@ import static org.junit.Assert.*;
 
 
 /** Performs some basic linked list tests. */
-public class LinkedListDequeTest {
+public class ArrayListDequeTest {
 
     @Test
     /** Adds a few things to the list, checking isEmpty() and size() are correct,
@@ -134,17 +134,6 @@ public class LinkedListDequeTest {
         }
         for (int i = 0; i < 5000; i++) {
             assertEquals(i, (int) lld1.get(i));
-        }
-    }
-
-    @Test
-    public void getRecursiveTest() {
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
-        for (int i = 0; i < 5000; i++) {
-            lld1.addLast(i);
-        }
-        for (int i = 0; i < 5000; i++) {
-            assertEquals(i, (int) lld1.getRecursive(i));
         }
     }
 }
