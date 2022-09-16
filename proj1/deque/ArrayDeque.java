@@ -2,13 +2,13 @@ package deque;
 
 import java.util.Iterator;
 
-public class ArrayListDeque<T> {
+public class ArrayDeque<T> implements Deque<T>{
     private T[] array;
     private int front;
     private int end;
     private int size;
 
-    public ArrayListDeque() {
+    public ArrayDeque() {
         this.array = (T[]) new Object[8];
         this.front = 0;
         this.end = 0;
@@ -26,6 +26,7 @@ public class ArrayListDeque<T> {
         return index - 1;
     }
 
+    @Override
     public void addFirst(T item) {
         if (size == 0) {
             array[front] = item;
@@ -38,6 +39,7 @@ public class ArrayListDeque<T> {
         size += 1;
     }
 
+    @Override
     public void addLast(T item) {
         if (size == 0) {
             array[end] = item;
@@ -49,15 +51,15 @@ public class ArrayListDeque<T> {
         end = index;
         size += 1;
     }
-
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }
-
+    @Override
     public int size() {
         return this.size;
     }
-
+    @Override
     public void printDeque() {
         if (isEmpty()) {
             return;
@@ -69,7 +71,7 @@ public class ArrayListDeque<T> {
         }
         System.out.println();
     }
-
+    @Override
     public T removeFirst() {
         if (size() == 0) {
             return null;
@@ -84,7 +86,7 @@ public class ArrayListDeque<T> {
         size -= 1;
         return result;
     }
-
+    @Override
     public T removeLast() {
         if (size() == 0) {
             return null;
@@ -99,7 +101,7 @@ public class ArrayListDeque<T> {
         size -= 1;
         return result;
     }
-
+    @Override
     public T get(int index) {
         if (index >= size()) {
             return null;

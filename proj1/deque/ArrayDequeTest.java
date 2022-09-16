@@ -6,7 +6,7 @@ import static org.junit.Assert.*;
 
 
 /** Performs some basic linked list tests. */
-public class ArrayListDequeTest {
+public class ArrayDequeTest {
 
     @Test
     /** Adds a few things to the list, checking isEmpty() and size() are correct,
@@ -15,7 +15,7 @@ public class ArrayListDequeTest {
      * && is the "and" operation. */
     public void addIsEmptySizeTest() {
 
-        ArrayListDeque<String> lld1 = new ArrayListDeque<>();
+        ArrayDeque<String> lld1 = new ArrayDeque<>();
 
 		assertTrue(lld1.isEmpty());
 		lld1.addFirst("front");
@@ -39,7 +39,7 @@ public class ArrayListDequeTest {
     /** Adds an item, then removes an item, and ensures that dll is empty afterwards. */
     public void addRemoveTest() {
 
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
+        ArrayDeque<Integer> lld1 = new ArrayDeque<>();
 		// should be empty
 		assertTrue(lld1.isEmpty());
 
@@ -56,7 +56,7 @@ public class ArrayListDequeTest {
     /* Tests removing from an empty deque */
     public void removeEmptyTest() {
 
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
+        ArrayDeque<Integer> lld1 = new ArrayDeque<>();
         lld1.addFirst(3);
 
         lld1.removeLast();
@@ -76,9 +76,9 @@ public class ArrayListDequeTest {
     /* Check if you can create LinkedListDeques with different parameterized types*/
     public void multipleParamTest() {
 
-        ArrayListDeque<String> lld1 = new ArrayListDeque<>();
-        ArrayListDeque<Double> lld2 = new ArrayListDeque<>();
-        ArrayListDeque<Boolean> lld3 = new ArrayListDeque<>();
+        ArrayDeque<String> lld1 = new ArrayDeque<>();
+        ArrayDeque<Double> lld2 = new ArrayDeque<>();
+        ArrayDeque<Boolean> lld3 = new ArrayDeque<>();
 
         lld1.addFirst("string");
         lld2.addFirst(3.14159);
@@ -93,7 +93,7 @@ public class ArrayListDequeTest {
     /* check if null is return when removing from an empty LinkedListDeque. */
     public void emptyNullReturnTest() {
 
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
+        ArrayDeque<Integer> lld1 = new ArrayDeque<>();
 
         boolean passed1 = false;
         boolean passed2 = false;
@@ -106,7 +106,7 @@ public class ArrayListDequeTest {
     /* Add large number of elements to deque; check if order is correct. */
     public void bigLLDequeTest() {
 
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
+        ArrayDeque<Integer> lld1 = new ArrayDeque<>();
         for (int i = 0; i < 8; i++) {
             lld1.addLast(i);
         }
@@ -123,7 +123,7 @@ public class ArrayListDequeTest {
 
     @Test
     public void getTest() {
-        ArrayListDeque<Integer> lld1 = new ArrayListDeque<>();
+        ArrayDeque<Integer> lld1 = new ArrayDeque<>();
         for (int i = 0; i < 8; i++) {
             lld1.addLast(i);
         }
