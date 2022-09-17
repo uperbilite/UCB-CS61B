@@ -55,15 +55,5 @@ public class TestArrayDequeEC {
             }
             assertEquals(message, a, b);
         }
-
-        for (int i = 0; i < 8; i++) {
-            double numberBetweenZeroAndOne = StdRandom.uniform();
-
-            if (numberBetweenZeroAndOne < 0.5) {
-                assertEquals(message, sad.removeLast(), ads.removeLast());
-            } else {
-                assertEquals(message, sad.removeFirst(), ads.removeFirst());
-            }
-        }
     }
 }

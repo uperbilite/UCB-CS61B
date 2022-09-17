@@ -1,5 +1,6 @@
 package deque;
 
+import edu.princeton.cs.introcs.StdRandom;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -17,22 +18,19 @@ public class ArrayDequeTest {
 
         ArrayDeque<String> lld1 = new ArrayDeque<>();
 
-		assertTrue(lld1.isEmpty());
-		lld1.addFirst("front");
+        assertTrue(lld1.isEmpty());
+        lld1.addFirst("front");
 
-		// The && operator is the same as "and" in Python.
-		// It's a binary operator that returns true if both arguments true, and false otherwise.
+        // The && operator is the same as "and" in Python.
+        // It's a binary operator that returns true if both arguments true, and false otherwise.
         assertEquals(1, lld1.size());
         assertFalse(lld1.isEmpty());
 
-		lld1.addLast("middle");
-		assertEquals(2, lld1.size());
+        lld1.addLast("middle");
+        assertEquals(2, lld1.size());
 
-		lld1.addLast("back");
-		assertEquals(3, lld1.size());
-
-		System.out.println("Printing out deque: ");
-		lld1.printDeque();
+        lld1.addLast("back");
+        assertEquals(3, lld1.size());
     }
 
     @Test
@@ -40,16 +38,16 @@ public class ArrayDequeTest {
     public void addRemoveTest() {
 
         ArrayDeque<Integer> lld1 = new ArrayDeque<>();
-		// should be empty
-		assertTrue(lld1.isEmpty());
+        // should be empty
+        assertTrue(lld1.isEmpty());
 
-		lld1.addFirst(10);
-		// should not be empty
-		assertFalse(lld1.isEmpty());
+        lld1.addFirst(10);
+        // should not be empty
+        assertFalse(lld1.isEmpty());
 
-		lld1.removeFirst();
-		// should be empty
-		assertTrue(lld1.isEmpty());
+        lld1.removeFirst();
+        // should be empty
+        assertTrue(lld1.isEmpty());
     }
 
     @Test
@@ -129,6 +127,57 @@ public class ArrayDequeTest {
         }
         for (int i = 0; i < 8; i++) {
             assertEquals(i, (int) lld1.get(i));
+        }
+    }
+
+    @Test
+    public void arrayDequeRandomTest() {
+        ArrayDeque<Integer> ad = new ArrayDeque<>();
+        ArrayDequeSolution<Integer> ads = new ArrayDequeSolution<>();
+        String message = "";
+        Integer a = null, b = null;
+
+        for (int i = 0; i < 10000; i++) {
+            if (ad.size() == 0) {
+                double numberBetweenZeroAndOne = StdRandom.uniform();
+                int num = StdRandom.uniform(1000);
+                if (numberBetweenZeroAndOne < 0.5) {
+                    ad.addLast(num);
+                    ads.addLast(num);
+                    message += "addLast(" + num + ")\n";
+                } else {
+                    ad.addFirst(num);
+                    ads.addFirst(num);
+                    message += "addFirst(" + num + ")\n";
+                }
+            } else {
+                int x = StdRandom.uniform(4);
+                int num = StdRandom.uniform(1000);
+                switch (x) {
+                    case 0:
+                        ad.addLast(num);
+                        ads.addLast(num);
+                        message += "addLast(" + num + ")\n";
+                        break;
+                    case 1:
+                        ad.addFirst(num);
+                        ads.addFirst(num);
+                        message += "addFirst(" + num + ")\n";
+                        break;
+                    case 2:
+                        a = ad.removeFirst();
+                        b = ads.removeFirst();
+                        message += "removeFirst()\n";
+                        break;
+                    case 3:
+                        a = ad.removeLast();
+                        b = ads.removeLast();
+                        message += "removeLast()\n";
+                        break;
+                    default:
+                }
+            }
+            assertEquals(message, b, a);
         }
     }
 }
