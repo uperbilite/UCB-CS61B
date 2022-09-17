@@ -3,6 +3,8 @@ package deque;
 import edu.princeton.cs.introcs.StdRandom;
 import org.junit.Test;
 
+import java.util.ArrayDeque;
+
 import static org.junit.Assert.*;
 
 
