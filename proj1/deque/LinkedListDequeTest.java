@@ -144,7 +144,7 @@ public class LinkedListDequeTest {
     @Test
     public void linkedListDequeRandomTest() {
         LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
-        LinkedListDeque<Integer> lld2 = new LinkedListDeque<>();
+        ArrayDeque<Integer> lld2 = new ArrayDeque<>();
         ArrayDequeSolution<Integer> ads = new ArrayDequeSolution<>();
         String message = "";
         Integer a = null, b = null;

@@ -135,7 +135,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         }
         @Override
         public boolean hasNext() {
-            return index + 1 == size();
+            return index < size();
         }
         @Override
         public T next() {
@@ -156,10 +156,10 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (o == null) {
             return false;
         }
-        if (!(o instanceof LinkedListDeque)) {
+        if (!(o instanceof Deque)) {
             return false;
         }
-        LinkedListDeque other = (LinkedListDeque) o;
+        Deque other = (Deque) o;
         if (this.size() != other.size()) {
             return false;
         }
