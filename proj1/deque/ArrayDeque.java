@@ -59,7 +59,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     public void printDeque() {
         int index = getNext(nextFirst);
         for (int i = 0; i < size(); i++) {
-            System.out.print(items[index]);
+            System.out.print(items[index] + " ");
             index = getNext(index);
         }
         System.out.println();

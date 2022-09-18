@@ -55,7 +55,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         Node first = sentinal.next;
         if (first != null) {
             do {
-                System.out.println(first.item + " ");
+                System.out.print(first.item + " ");
                 first = first.next;
             } while (first != sentinal.next);
             System.out.println();
