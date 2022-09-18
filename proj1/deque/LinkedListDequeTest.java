@@ -143,48 +143,74 @@ public class LinkedListDequeTest {
 
     @Test
     public void linkedListDequeRandomTest() {
-        LinkedListDeque<Integer> lld = new LinkedListDeque<>();
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
+        LinkedListDeque<Integer> lld2 = new LinkedListDeque<>();
         ArrayDequeSolution<Integer> ads = new ArrayDequeSolution<>();
         String message = "";
         Integer a = null, b = null;
+        int index = 0;
 
         for (int i = 0; i < 10000; i++) {
-            if (lld.size() == 0) {
+            if (lld1.size() == 0) {
                 double numberBetweenZeroAndOne = StdRandom.uniform();
-                int num = StdRandom.uniform(1000);
+                int item = StdRandom.uniform(1000);
                 if (numberBetweenZeroAndOne < 0.5) {
-                    lld.addLast(num);
-                    ads.addLast(num);
-                    message += "addLast(" + num + ")\n";
+                    lld1.addLast(item);
+                    lld2.addLast(item);
+                    ads.addLast(item);
+                    message += "addLast(" + item + ")\n";
                 } else {
-                    lld.addFirst(num);
-                    ads.addFirst(num);
-                    message += "addFirst(" + num + ")\n";
+                    lld1.addFirst(item);
+                    lld2.addFirst(item);
+                    ads.addFirst(item);
+                    message += "addFirst(" + item + ")\n";
                 }
             } else {
-                int x = StdRandom.uniform(4);
-                int num = StdRandom.uniform(1000);
+                int x = StdRandom.uniform(8);
+                int item = StdRandom.uniform(1000);
                 switch (x) {
                     case 0:
-                        lld.addLast(num);
-                        ads.addLast(num);
-                        message += "addLast(" + num + ")\n";
+                        lld1.addLast(item);
+                        lld2.addLast(item);
+                        ads.addLast(item);
+                        message += "addLast(" + item + ")\n";
                         break;
                     case 1:
-                        lld.addFirst(num);
-                        ads.addFirst(num);
-                        message += "addFirst(" + num + ")\n";
+                        lld1.addFirst(item);
+                        lld2.addFirst(item);
+                        ads.addFirst(item);
+                        message += "addFirst(" + item + ")\n";
                         break;
                     case 2:
-                        a = lld.removeFirst();
+                        a = lld1.removeFirst();
+                        lld2.removeFirst();
                         b = ads.removeFirst();
                         message += "removeFirst()\n";
                         break;
                     case 3:
-                        a = lld.removeLast();
+                        a = lld1.removeLast();
+                        lld2.removeLast();
                         b = ads.removeLast();
                         message += "removeLast()\n";
                         break;
+                    case 4:
+                        assertEquals(ads.size(), lld1.size());
+                        index = StdRandom.uniform(ads.size());
+                        a = lld1.get(index);
+                        b = ads.get(index);
+                    case 5:
+                        assertEquals(ads.size(), lld1.size());
+                        index = StdRandom.uniform(ads.size());
+                        a = lld1.getRecursive(index);
+                        b = ads.get(index);
+                    case 6:
+                        assertTrue(message, lld1.equals(lld2));
+                    case 7:
+                        index = 0;
+                        for (var e : lld1) {
+                            assertEquals(e, ads.get(index));
+                            index += 1;
+                        }
                     default:
                 }
             }
