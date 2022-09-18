@@ -8,9 +8,18 @@ public class MaxArrayDeque<T> extends ArrayDeque<T> {
         this.c = comp;
     }
     public T max() {
-        return null;
+        return max(this.c);
     }
     public T max(Comparator<T> comp) {
-        return null;
+        if (isEmpty()) {
+            return null;
+        }
+        T result = get(0);
+        for (int i = 0; i < size(); i++) {
+            if (comp.compare(get(i), result) > 0) {
+                result = get(i);
+            }
+        }
+        return result;
     }
 }

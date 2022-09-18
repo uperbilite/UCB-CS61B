@@ -129,21 +129,18 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         return recursiveHelper(index, first);
     }
     private class LinkedListDequeIterator implements Iterator<T> {
-        private Node p;
+        private int index;
         LinkedListDequeIterator() {
-            this.p = sentinal.next;
+            this.index = 0;
         }
         @Override
         public boolean hasNext() {
-            if (p == null || p.next == p) {
-                return false;
-            }
-            return p.next == sentinal.next;
+            return index + 1 == size();
         }
         @Override
         public T next() {
-            T result = p.item;
-            p = p.next;
+            T result = get(index);
+            index += 1;
             return result;
         }
     }

@@ -1,7 +1,5 @@
 package deque;
 
-import net.sf.saxon.om.Item;
-
 import java.util.Iterator;
 
 public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
