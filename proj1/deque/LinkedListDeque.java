@@ -130,12 +130,15 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
     private class LinkedListDequeIterator implements Iterator<T> {
         private Node p;
-        public LinkedListDequeIterator() {
+        LinkedListDequeIterator() {
             this.p = sentinal.next;
         }
         @Override
         public boolean hasNext() {
-            return p.next != p && p.next != sentinal.next;
+            if (p == null || p.next == p) {
+                return false;
+            }
+            return p.next == sentinal.next;
         }
         @Override
         public T next() {

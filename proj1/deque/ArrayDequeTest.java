@@ -3,8 +3,6 @@ package deque;
 import edu.princeton.cs.introcs.StdRandom;
 import org.junit.Test;
 
-import java.util.ArrayDeque;
-
 import static org.junit.Assert.*;
 
 
@@ -128,7 +126,7 @@ public class ArrayDequeTest {
             lld1.addLast(i);
         }
         for (int i = 0; i < 8; i++) {
-            //assertEquals(i, (int) lld1.get(i));
+            assertEquals(i, (int) lld1.get(i));
         }
     }
 

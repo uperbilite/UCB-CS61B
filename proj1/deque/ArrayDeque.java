@@ -1,5 +1,7 @@
 package deque;
 
+import net.sf.saxon.om.Item;
+
 import java.util.Iterator;
 
 public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
@@ -7,19 +9,49 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private int nextFirst;
     private int nextLast;
     private int size;
+    private int capacity;
     public ArrayDeque() {
         this.items = (T[]) new Object[8];
         this.nextFirst = 3;
         this.nextLast = 4;
         this.size = 0;
+        this.capacity = 8;
+    }
+    private int getNext(int index) {
+        return (index + 1) % capacity;
+    }
+    private int getPrev(int index) {
+        return index == 0 ? capacity - 1 : index - 1;
+    }
+    private void resize(int newCapacity) {
+        T[] a = (T[]) new Object[newCapacity];
+        int index = getNext(nextFirst);
+        for (int i = 0; i < size(); i++) {
+            a[i] = items[index];
+            index = getNext(index);
+        }
+        items = a;
+        capacity = newCapacity;
+        nextFirst = capacity - 1;
+        nextLast = size;
     }
     @Override
     public void addFirst(T item) {
-        return;
+        if (size > capacity * 0.75) {
+            resize(capacity * 2);
+        }
+        items[nextFirst] = item;
+        nextFirst = getPrev(nextFirst);
+        size += 1;
     }
     @Override
     public void addLast(T item) {
-        return;
+        if (size > capacity * 0.75) {
+            resize(capacity * 2);
+        }
+        items[nextLast] = item;
+        nextLast = getNext(nextLast);
+        size += 1;
     }
     @Override
     public int size() {
@@ -27,28 +59,63 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
     @Override
     public void printDeque() {
-        return;
+        int index = getNext(nextFirst);
+        for (int i = 0; i < size(); i++) {
+            System.out.print(items[index]);
+            index = getNext(index);
+        }
+        System.out.println();
+    }
+    private void removeCheck() {
+        if (size < capacity * 0.25) {
+            int newCapacity = capacity / 2;
+            newCapacity = Math.max(newCapacity, 8);
+            resize(newCapacity);
+        }
     }
     @Override
     public T removeFirst() {
-        return null;
+        if (isEmpty()) {
+            return null;
+        }
+        removeCheck();
+        T result = items[getNext(nextFirst)];
+        nextFirst = getNext(nextFirst);
+        size -= 1;
+        return result;
     }
     @Override
     public T removeLast() {
-        return null;
+        if (isEmpty()) {
+            return null;
+        }
+        removeCheck();
+        T result = items[getPrev(nextLast)];
+        nextLast = getPrev(nextLast);
+        size -= 1;
+        return result;
     }
     @Override
     public T get(int index) {
-        return null;
+        if (isEmpty() || index >= size()) {
+            return null;
+        }
+        return items[(getNext(nextFirst) + index) % capacity];
     }
     private class ArrayDequeIterator implements Iterator<T> {
+        private int index;
+        ArrayDequeIterator() {
+            this.index = 0;
+        }
         @Override
         public boolean hasNext() {
-            return false;
+            return index + 1 == size();
         }
         @Override
         public T next() {
-            return null;
+            T result = get(index);
+            index += 1;
+            return result;
         }
     }
     @Override
@@ -57,6 +124,24 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
     @Override
     public boolean equals(Object o) {
-        return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        if (!(o instanceof ArrayDeque)) {
+            return false;
+        }
+        ArrayDeque other = (ArrayDeque) o;
+        if (this.size() != other.size()) {
+            return false;
+        }
+        for (int i = 0; i < this.size(); i++) {
+            if (!(this.get(i).equals(other.get(i)))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

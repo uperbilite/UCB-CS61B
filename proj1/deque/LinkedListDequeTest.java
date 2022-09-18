@@ -198,19 +198,23 @@ public class LinkedListDequeTest {
                         index = StdRandom.uniform(ads.size());
                         a = lld1.get(index);
                         b = ads.get(index);
+                        break;
                     case 5:
                         assertEquals(ads.size(), lld1.size());
                         index = StdRandom.uniform(ads.size());
                         a = lld1.getRecursive(index);
                         b = ads.get(index);
+                        break;
                     case 6:
                         assertTrue(message, lld1.equals(lld2));
+                        break;
                     case 7:
                         index = 0;
                         for (var e : lld1) {
                             assertEquals(e, ads.get(index));
                             index += 1;
                         }
+                        break;
                     default:
                 }
             }
