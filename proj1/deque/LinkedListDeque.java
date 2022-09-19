@@ -53,13 +53,14 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     @Override
     public void printDeque() {
         Node first = sentinal.next;
-        if (first != null) {
-            do {
-                System.out.print(first.item + " ");
-                first = first.next;
-            } while (first != sentinal.next);
-            System.out.println();
+        if (first == null) {
+            return;
         }
+        do {
+            System.out.print(first.item + " ");
+            first = first.next;
+        } while (first != sentinal.next);
+        System.out.println();
     }
     private T removeOne() {
         T result = sentinal.next.item;
