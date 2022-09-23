@@ -1,8 +1,6 @@
 package gitlet;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -46,13 +44,12 @@ public class Repository {
      *      - blobs/ - the saved contents of files
      *      - HEAD - store the commit object points to the current working directory
      */
-    public static void initCommand() throws IOException {
+    public static void initCommand() {
 
         GITLET_DIR.mkdir();
         STAGING_AREA_DIR.mkdir();
         COMMITS_DIR.mkdir();
         BLOBS_DIR.mkdir();
-        HEAD.createNewFile();
         Commit initialCommit = new Commit();
         Utils.writeObject(Utils.join(COMMITS_DIR, initialCommit.getId()), initialCommit);
         Utils.writeObject(HEAD, initialCommit);
@@ -63,7 +60,7 @@ public class Repository {
         return GITLET_DIR.exists();
     }
 
-    public static void addCommand(String addName) throws IOException {
+    public static void addCommand(String addName) {
         File addFile = Utils.join(CWD, addName);
         if (!addFile.exists()) {
             Utils.exitWithMessage("File does not exist.");
@@ -82,10 +79,10 @@ public class Repository {
             }
         }
         Utils.writeContents(Utils.join(STAGING_AREA_DIR, addName),
-                Files.readAllBytes(addFile.toPath()));
+                Utils.readContents(addFile));
     }
 
-    public static void commitCommand(String message) throws IOException {
+    public static void commitCommand(String message) {
         List<String> stagingFiles = Utils.plainFilenamesIn(STAGING_AREA_DIR);
         Commit parentCommit = Utils.readObject(HEAD, Commit.class);
         TreeMap<String, String> hashByFileName = parentCommit.getHashMap();
@@ -103,7 +100,7 @@ public class Repository {
             // if the key is existed in map, then overwrite it. Otherwise, it will insert a new one
             hashByFileName.put(stagingName, stagingHash);
             Utils.writeContents(Utils.join(BLOBS_DIR, stagingHash),
-                    Files.readAllBytes(stagingFile.toPath()));
+                    Utils.readContents(stagingFile));
         }
         Commit newCommit = new Commit(message, parentCommit.getId(), null,
                 hashByFileName);
