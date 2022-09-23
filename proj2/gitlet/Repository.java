@@ -28,6 +28,9 @@ public class Repository {
     /** The stagina area directory. */
     public static final File STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
 
+    /** The removed area directory. */
+    public static final File REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
+
     /** The commits directory. */
     public static final File COMMITS_DIR = Utils.join(GITLET_DIR, "commits");
 
@@ -40,14 +43,15 @@ public class Repository {
     /**
      * .gitlet/ - restore the information of a repository
      *      - staging area/ - added files will be in staging area
+     *      - removed area/ - stage files for removal
      *      - commits/ - all commits in commits directory
      *      - blobs/ - the saved contents of files
      *      - HEAD - store the commit object points to the current working directory
      */
     public static void initCommand() {
-
         GITLET_DIR.mkdir();
         STAGING_AREA_DIR.mkdir();
+        REMOVED_AREA_DIR.mkdir();
         COMMITS_DIR.mkdir();
         BLOBS_DIR.mkdir();
         Commit initialCommit = new Commit();
@@ -102,6 +106,11 @@ public class Repository {
             Utils.writeContents(Utils.join(BLOBS_DIR, stagingHash),
                     Utils.readContents(stagingFile));
         }
+        List<String> removedFiles = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
+        for (var removedName : removedFiles) {
+            assert hashByFileName.containsKey(removedName);
+            hashByFileName.remove(removedName);
+        }
         Commit newCommit = new Commit(message, parentCommit.getId(), null,
                 hashByFileName);
         Utils.writeObject(Utils.join(COMMITS_DIR, newCommit.getId()), newCommit);
@@ -110,6 +119,31 @@ public class Repository {
         for (var stagingName : stagingFiles) {
             File stagingFile = Utils.join(STAGING_AREA_DIR, stagingName);
             stagingFile.delete();
+        }
+        for (var removedName : removedFiles) {
+            File removedFile = Utils.join(REMOVED_AREA_DIR, removedName);
+            removedFile.delete();
+        }
+    }
+
+    //TODO: untested
+    public static void rmCommand(String fileName) {
+        List<String> stagingFiles = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        Commit currentCommit = Utils.readObject(HEAD, Commit.class);
+        if (!stagingFiles.contains(fileName)
+                && !currentCommit.getHashMap().containsKey(fileName)) {
+            Utils.exitWithMessage("No reason to remove the file.");
+        }
+        if (stagingFiles.contains(fileName)) {
+            Utils.join(STAGING_AREA_DIR, fileName).delete();
+        }
+        if (currentCommit.getHashMap().containsKey(fileName)) {
+            File removedFile = Utils.join(REMOVED_AREA_DIR, fileName);
+            // don't need the removedFile's content, only it's name
+            Utils.writeObject(removedFile, "");
+            if (Utils.join(CWD, fileName).exists()) {
+                Utils.restrictedDelete(fileName);
+            }
         }
     }
 
@@ -126,6 +160,18 @@ public class Repository {
         }
     }
 
+    // TODO: untested
+    public static void globalLogCommand() {
+        List<String> allCommits = Utils.plainFilenamesIn(COMMITS_DIR);
+        if (allCommits == null) {
+            return;
+        }
+        for (var commitId : allCommits) {
+            Commit c = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
+            printLogMessage(c);
+        }
+    }
+
     private static void printLogMessage(Commit c) {
         System.out.println("===");
         System.out.println("commit " + c.getId());
@@ -135,6 +181,29 @@ public class Repository {
         System.out.println("Date: " + f.format(c.getTimestamp()));
         System.out.println(c.getMessage());
         System.out.println();
+    }
+
+    // TODO: untested
+    public static void findCommand(String message) {
+        List<String> allCommits = Utils.plainFilenamesIn(COMMITS_DIR);
+        if (allCommits == null) {
+            Utils.exitWithMessage("Found no commit with that message.");
+        }
+        boolean isFound = false;
+        for (var commitId : allCommits) {
+            Commit c = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
+            if (c.getMessage().equals(message)) {
+                isFound = true;
+                System.out.println(c.getId());
+            }
+        }
+        if (!isFound) {
+            Utils.exitWithMessage("Found no commit with that message.");
+        }
+    }
+
+    public static void statusCommand() {
+
     }
 
     public static void checkoutFile(String fileName) {

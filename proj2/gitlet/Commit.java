@@ -58,7 +58,8 @@ public class Commit implements Serializable {
         this.parentCommit = parentCommit;
         this.secondParentCommit = secondParentCommit;
         this.hashByFileName = hashByFileName;
-        this.id = Utils.sha1(message, timestamp.toString()); // TODO: add all file to make hash
+        this.id = Utils.sha1(message, timestamp.toString(), parentCommit);
+        // TODO: add all file to make hash
     }
 
     public String getMessage() {

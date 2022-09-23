@@ -1,7 +1,5 @@
 package gitlet;
 
-import java.io.IOException;
-
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author Bilite Deng
  */
@@ -49,11 +47,27 @@ public class Main {
                     Utils.exitWithMessage("%s", "Incorrect operands.");
                 }
                 break;
+            case "rm":
+                validateNumArgs(args, 2);
+                validateInitialized();
+                Repository.rmCommand(args[1]);
             case "log":
                 validateNumArgs(args, 1);
                 validateInitialized();
                 Repository.logCommand();
                 break;
+            case "global-log":
+                validateNumArgs(args, 1);
+                validateInitialized();
+                Repository.globalLogCommand();
+            case "find":
+                validateNumArgs(args, 2);
+                validateInitialized();
+                Repository.findCommand(args[1]);
+            case "status":
+                validateNumArgs(args, 1);
+                validateInitialized();
+                Repository.statusCommand();
             // TODO: FILL THE REST IN
             default:
                 Utils.exitWithMessage("%s", "No command with that name exists.");
