@@ -10,7 +10,7 @@ public class Main {
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            Utils.exitWithMessage("%s", "Please enter a command.");
+            Utils.exitWithMessage("Please enter a command.");
         }
         String firstArg = args[0];
         switch(firstArg) {
@@ -34,16 +34,16 @@ public class Main {
                     Repository.checkoutBranch(args[1]);
                 } else if (args.length == 3) { // replace file to head file
                     if (!args[1].equals("--")) {
-                        Utils.exitWithMessage("%s", "Incorrect operands.");
+                        Utils.exitWithMessage("Incorrect operands.");
                     }
                     Repository.checkoutFile(args[2]);
                 } else if (args.length == 4) { // replace file to specific commit file
                     if (!args[2].equals("--")) {
-                        Utils.exitWithMessage("%s", "Incorrect operands.");
+                        Utils.exitWithMessage("Incorrect operands.");
                     }
                     Repository.checkoutFile(args[1], args[3]);
                 } else {
-                    Utils.exitWithMessage("%s", "Incorrect operands.");
+                    Utils.exitWithMessage("Incorrect operands.");
                 }
                 break;
             case "rm":
@@ -86,9 +86,8 @@ public class Main {
                 validateInitialized();
                 Repository.resetCommand(args[1]);
                 break;
-            // TODO: FILL THE REST IN
             default:
-                Utils.exitWithMessage("%s", "No command with that name exists.");
+                Utils.exitWithMessage("No command with that name exists.");
         }
     }
 
@@ -100,7 +99,7 @@ public class Main {
      */
     public static void validateNumArgs(String[] args, int n) {
         if (args.length != n) {
-            Utils.exitWithMessage("%s", "Incorrect operands.");
+            Utils.exitWithMessage("Incorrect operands.");
         }
     }
 
@@ -109,7 +108,7 @@ public class Main {
      */
     public static void validateInitialized() {
         if (!Repository.isInitialized()) {
-            Utils.exitWithMessage("%s", "Not in an initialized Gitlet directory.");
+            Utils.exitWithMessage("Not in an initialized Gitlet directory.");
         }
     }
 }
