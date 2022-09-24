@@ -261,7 +261,7 @@ public class Repository {
 
     public static void checkoutBranch(String branchName) {
         List<String> branchNames = Utils.plainFilenamesIn(HEADS_DIR);
-        if (branchNames.contains(branchNames)) {
+        if (!branchNames.contains(branchName)) {
             Utils.exitWithMessage("No such branch exists.");
         }
         String currentBranch = Utils.readContentsAsString(HEAD);
@@ -294,7 +294,7 @@ public class Repository {
 
     public static void branchCommand(String branchName) {
         List<String> branchNames = Utils.plainFilenamesIn(HEADS_DIR);
-        if (branchNames.contains(branchNames)) {
+        if (branchNames.contains(branchName)) {
             Utils.exitWithMessage("A branch with that name already exists.");
         }
         Commit currentCommit = Utils.readHeadCommit(HEAD);

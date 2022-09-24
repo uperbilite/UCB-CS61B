@@ -85,6 +85,7 @@ public class Main {
                 validateNumArgs(args, 2);
                 validateInitialized();
                 Repository.resetCommand(args[1]);
+                break;
             // TODO: FILL THE REST IN
             default:
                 Utils.exitWithMessage("%s", "No command with that name exists.");
