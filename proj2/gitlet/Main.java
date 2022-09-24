@@ -16,10 +16,6 @@ public class Main {
         switch(firstArg) {
             case "init":
                 validateNumArgs(args, 1);
-                if (Repository.isInitialized()) {
-                    Utils.exitWithMessage("%s", "A Gitlet version-control system " +
-                            "already exists in the current directory.");
-                }
                 Repository.initCommand();
                 break;
             case "add":
@@ -28,9 +24,6 @@ public class Main {
                 Repository.addCommand(args[1]);
                 break;
             case "commit":
-                if (args.length == 1) {
-                    Utils.exitWithMessage("Please enter a commit message.");
-                }
                 validateNumArgs(args, 2);
                 validateInitialized();
                 Repository.commitCommand(args[1]);
@@ -40,8 +33,14 @@ public class Main {
                 if (args.length == 2) { // switch branch
                     Repository.checkoutBranch(args[1]);
                 } else if (args.length == 3) { // replace file to head file
+                    if (!args[1].equals("--")) {
+                        Utils.exitWithMessage("%s", "Incorrect operands.");
+                    }
                     Repository.checkoutFile(args[2]);
                 } else if (args.length == 4) { // replace file to specific commit file
+                    if (!args[2].equals("--")) {
+                        Utils.exitWithMessage("%s", "Incorrect operands.");
+                    }
                     Repository.checkoutFile(args[1], args[3]);
                 } else {
                     Utils.exitWithMessage("%s", "Incorrect operands.");
@@ -51,6 +50,7 @@ public class Main {
                 validateNumArgs(args, 2);
                 validateInitialized();
                 Repository.rmCommand(args[1]);
+                break;
             case "log":
                 validateNumArgs(args, 1);
                 validateInitialized();
@@ -60,14 +60,22 @@ public class Main {
                 validateNumArgs(args, 1);
                 validateInitialized();
                 Repository.globalLogCommand();
+                break;
             case "find":
                 validateNumArgs(args, 2);
                 validateInitialized();
                 Repository.findCommand(args[1]);
+                break;
             case "status":
                 validateNumArgs(args, 1);
                 validateInitialized();
                 Repository.statusCommand();
+                break;
+            case "branch":
+                validateNumArgs(args, 2);
+                validateInitialized();
+                Repository.branchCommand(args[1]);
+                break;
             // TODO: FILL THE REST IN
             default:
                 Utils.exitWithMessage("%s", "No command with that name exists.");

@@ -38,8 +38,6 @@ public class Commit implements Serializable {
     /** A mapping of file names to blob references (file's sha-1 id). */
     private TreeMap<String, String> hashByFileName;
 
-    // TODO: commit tree?
-
     /** Make the initial commit. */
     public Commit() {
         this.message = "initial commit";

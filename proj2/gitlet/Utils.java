@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
 
+import static gitlet.Repository.HEADS_DIR;
+
 
 /** Assorted utilities.
  *
@@ -241,5 +243,16 @@ class Utils {
     static void exitWithMessage(String msg, Object... args) {
         message(msg, args);
         System.exit(0);
+    }
+
+    static Commit readHeadCommit(File HEAD) {
+        String branchName = Utils.readContentsAsString(HEAD);
+        File branch = Utils.join(HEADS_DIR, branchName);
+        return Utils.readObject(branch, Commit.class);
+    }
+
+    static File readHeadBranch(File HEAD) {
+        String branchName = Utils.readContentsAsString(HEAD);
+        return Utils.join(HEADS_DIR, branchName);
     }
 }
