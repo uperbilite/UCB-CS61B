@@ -78,6 +78,11 @@ public class Repository {
         if (!addFile.exists()) {
             Utils.exitWithMessage("File does not exist.");
         }
+        List<String> removedFiles = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
+        if (removedFiles.contains(addName)) {
+            File removedFile = Utils.join(REMOVED_AREA_DIR, addName);
+            removedFile.delete();
+        }
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         TreeMap<String, String> hashByFileName = currentCommit.getHashMap();
         if (hashByFileName.containsKey(addName)) {
@@ -127,7 +132,6 @@ public class Repository {
         clearRemovedArea();
     }
 
-    //TODO: untested
     public static void rmCommand(String fileName) {
         List<String> stagingFiles = Utils.plainFilenamesIn(STAGING_AREA_DIR);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
@@ -161,7 +165,6 @@ public class Repository {
         }
     }
 
-    // TODO: untested
     public static void globalLogCommand() {
         List<String> allCommits = Utils.plainFilenamesIn(COMMITS_DIR);
         for (var commitId : allCommits) {
@@ -181,7 +184,6 @@ public class Repository {
         System.out.println();
     }
 
-    // TODO: untested
     public static void findCommand(String message) {
         List<String> allCommits = Utils.plainFilenamesIn(COMMITS_DIR);
         boolean isFound = false;
@@ -199,7 +201,16 @@ public class Repository {
 
     public static void statusCommand() {
         System.out.println("=== Branches ===");
-        // TODO: handel print branches;
+        List<String> allBranches = Utils.plainFilenamesIn(HEADS_DIR);
+        String currentBranch = Utils.readContentsAsString(HEAD);
+        Collections.sort(allBranches);
+        for (var branchName : allBranches) {
+            if (branchName.equals(currentBranch)) {
+                System.out.println("*" + branchName);
+            } else {
+                System.out.println(branchName);
+            }
+        }
         System.out.println();
         System.out.println("=== Staged Files ===");
         List<String> stagingFiles = Utils.plainFilenamesIn(STAGING_AREA_DIR);
@@ -224,7 +235,6 @@ public class Repository {
     }
 
     public static void checkoutFile(String fileName) {
-        // TODO: checkout the HEAD commit, not the latest branch commit
         Commit headCommit = Utils.readHeadCommit(HEAD);
         String headFileHash = headCommit.getHashMap().get(fileName);
         if (headFileHash == null) {
@@ -250,11 +260,36 @@ public class Repository {
     }
 
     public static void checkoutBranch(String branchName) {
-        // TODO
-        // checkout all file in the latest branch
-        // remove the other files that are not in the latest branch
-        // move the HEAD to the branch
-        // clear staging area
+        List<String> branchNames = Utils.plainFilenamesIn(HEADS_DIR);
+        if (branchNames.contains(branchNames)) {
+            Utils.exitWithMessage("No such branch exists.");
+        }
+        String currentBranch = Utils.readContentsAsString(HEAD);
+        if (branchName.equals(currentBranch)) {
+            Utils.exitWithMessage("No need to checkout the current branch.");
+        }
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        List<String> fileNames = Utils.plainFilenamesIn(CWD);
+        for (var fileName : fileNames) {
+            if (!currentCommit.getHashMap().containsKey(fileName)) {
+                Utils.exitWithMessage("There is an untracked file in the way; " +
+                        "delete it, or add and commit it first.");
+            }
+        }
+        Commit branchHead = Utils.readObject(Utils.join(HEADS_DIR, branchName), Commit.class);
+        for (var fileName : fileNames) {
+            if (!branchHead.getHashMap().containsKey(fileName)) {
+                Utils.restrictedDelete(fileName);
+            }
+        }
+        for (var entry : branchHead.getHashMap().entrySet()) {
+            File branchFile = Utils.join(CWD, entry.getKey());
+            Utils.writeContents(branchFile,
+                    Utils.readContents(Utils.join(BLOBS_DIR, entry.getValue())));
+        }
+        clearStagingArea();
+        clearRemovedArea();
+        Utils.writeContents(HEAD, branchName);
     }
 
     public static void branchCommand(String branchName) {
@@ -267,11 +302,41 @@ public class Repository {
     }
 
     public static void rmBranchCommand(String branchName) {
-
+        List<String> branchNames = Utils.plainFilenamesIn(HEADS_DIR);
+        if (!branchNames.contains(branchName)) {
+            Utils.exitWithMessage("A branch with that name does not exist.");
+        }
+        String currentBranch = Utils.readContentsAsString(HEAD);
+        if (branchName.equals(currentBranch)) {
+            Utils.exitWithMessage("Cannot remove the current branch.");
+        }
+        File branch = Utils.join(HEADS_DIR, branchName);
+        branch.delete();
     }
 
     public static void resetCommand(String commitId) {
-
+        List<String> allCommitId = Utils.plainFilenamesIn(COMMITS_DIR);
+        if (!allCommitId.contains(commitId)) {
+            Utils.exitWithMessage("No commit with that id exists.");
+        }
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        List<String> fileNames = Utils.plainFilenamesIn(CWD);
+        for (var fileName : fileNames) {
+            if (!currentCommit.getHashMap().containsKey(fileName)) {
+                Utils.exitWithMessage("There is an untracked file in the way; " +
+                        "delete it, or add and commit it first.");
+            }
+        }
+        Commit commit = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
+        for (var fileName : fileNames) {
+            if (!commit.getHashMap().containsKey(fileName)) {
+                Utils.restrictedDelete(fileName);
+            }
+        }
+        for (var entry : commit.getHashMap().entrySet()) {
+            File f = Utils.join(CWD, entry.getKey());
+            Utils.writeContents(f, Utils.readContents(Utils.join(BLOBS_DIR, entry.getValue())));
+        }
     }
 
     private static void clearStagingArea() {

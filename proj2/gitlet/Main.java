@@ -76,6 +76,15 @@ public class Main {
                 validateInitialized();
                 Repository.branchCommand(args[1]);
                 break;
+            case "rm-branch":
+                validateNumArgs(args, 2);
+                validateInitialized();
+                Repository.rmBranchCommand(args[1]);
+                break;
+            case "reset":
+                validateNumArgs(args, 2);
+                validateInitialized();
+                Repository.resetCommand(args[1]);
             // TODO: FILL THE REST IN
             default:
                 Utils.exitWithMessage("%s", "No command with that name exists.");
