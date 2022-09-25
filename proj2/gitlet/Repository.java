@@ -241,7 +241,7 @@ public class Repository {
     }
 
     public static void checkoutFile(String commitId, String fileName) {
-        // TODO: abbreviate commit id
+        commitId = getFullCommitId(commitId);
         checkCommitExist(commitId);
         checkFileExist(COMMITS_DIR, commitId, fileName);
         Commit commit = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
@@ -274,7 +274,7 @@ public class Repository {
     }
 
     public static void resetCommand(String commitId) {
-        // TODO: abbreviate commit id
+        commitId = getFullCommitId(commitId);
         checkCommitExist(commitId);
         checkUntrackedFileNotChanged(COMMITS_DIR, commitId);
         replaceFilesInCWD(COMMITS_DIR, commitId);
@@ -362,10 +362,10 @@ public class Repository {
                     mergedContent += "<<<<<<< HEAD\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
-                    mergedContent += "\n=======\n";
+                    mergedContent += "=======\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += "\n>>>>>>>";
+                    mergedContent += ">>>>>>>";
                 }
                 else if (splitPointMap.containsKey(fileName)
                         && currentBranchMap.containsKey(fileName)
@@ -374,7 +374,7 @@ public class Repository {
                     mergedContent += "<<<<<<< HEAD\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
-                    mergedContent += "\n=======\n";
+                    mergedContent += "=======\n";
                     mergedContent += ">>>>>>>";
                 }
                 else if (splitPointMap.containsKey(fileName)
@@ -385,16 +385,16 @@ public class Repository {
                     mergedContent += "=======\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += "\n>>>>>>>";
+                    mergedContent += ">>>>>>>";
                 }
                 else {
                     mergedContent += "<<<<<<< HEAD\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
-                    mergedContent += "\n=======\n";
+                    mergedContent += "=======\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += "\n>>>>>>>";
+                    mergedContent += ">>>>>>>";
                 }
                 File mergedFile = Utils.join(CWD, fileName);
                 Utils.writeContents(mergedFile, mergedContent);
@@ -410,7 +410,7 @@ public class Repository {
 
     private static void checkCommitExist(String commitId) {
         List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
-        if (!allCommitIds.contains(commitId)) {
+        if (commitId == null || !allCommitIds.contains(commitId)) {
             Utils.exitWithMessage("No commit with that id exists.");
         }
     }
@@ -539,7 +539,12 @@ public class Repository {
     }
 
     private static String getFullCommitId(String commitId) {
-        // TODO
+        List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
+        for (var fullCommitId : allCommitIds) {
+            if (fullCommitId.startsWith(commitId)) {
+                return fullCommitId;
+            }
+        }
         return null;
     }
 
