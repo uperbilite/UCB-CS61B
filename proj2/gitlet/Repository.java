@@ -249,27 +249,10 @@ public class Repository {
     }
 
     public static void checkoutBranch(String branchName) {
-        List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
-        if (!allBranchNames.contains(branchName)) {
-            Utils.exitWithMessage("No such branch exists.");
-        }
-        String currentBranchName = Utils.readContentsAsString(HEAD);
-        if (branchName.equals(currentBranchName)) {
-            Utils.exitWithMessage("No need to checkout the current branch.");
-        }
-        List<String> allFileNames = Utils.plainFilenamesIn(CWD);
-        Commit branchHead = Utils.readObject(Utils.join(HEADS_DIR, branchName), Commit.class);
+        checkBranchExist(branchName);
+        checkCheckoutNotCurrentBranch(branchName);
         checkUntrackedFileNotChanged(HEADS_DIR, branchName);
-        for (var fileName : allFileNames) {
-            if (!branchHead.getHashMap().containsKey(fileName)) {
-                Utils.restrictedDelete(fileName);
-            }
-        }
-        for (var entry : branchHead.getHashMap().entrySet()) {
-            File currentFile = Utils.join(CWD, entry.getKey());
-            Utils.writeContents(currentFile,
-                    Utils.readContents(Utils.join(BLOBS_DIR, entry.getValue())));
-        }
+        replaceFilesInCWD(HEADS_DIR, branchName);
         clearStagingArea();
         clearRemovedArea();
         Utils.writeContents(HEAD, branchName);
@@ -283,29 +266,17 @@ public class Repository {
 
     public static void rmBranchCommand(String branchName) {
         checkBranchNameExist(branchName);
-        String currentBranchName = Utils.readContentsAsString(HEAD);
-        if (branchName.equals(currentBranchName)) {
-            Utils.exitWithMessage("Cannot remove the current branch.");
-        }
+        checkRemoveNotCurrentBranch(branchName);
         File branch = Utils.join(HEADS_DIR, branchName);
         branch.delete();
     }
 
     public static void resetCommand(String commitId) {
-        // TODO: abbreviate commit id, reusing checkoutFile
+        // TODO: abbreviate commit id
         checkCommitExist(commitId);
         checkUntrackedFileNotChanged(COMMITS_DIR, commitId);
+        replaceFilesInCWD(COMMITS_DIR, commitId);
         Commit commit = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
-        List<String> allFileNames = Utils.plainFilenamesIn(CWD);
-        for (var fileName : allFileNames) {
-            if (!commit.getHashMap().containsKey(fileName)) {
-                Utils.restrictedDelete(fileName);
-            }
-        }
-        for (var entry : commit.getHashMap().entrySet()) {
-            File f = Utils.join(CWD, entry.getKey());
-            Utils.writeContents(f, Utils.readContents(Utils.join(BLOBS_DIR, entry.getValue())));
-        }
         File currentBranch = Utils.readHeadBranch(HEAD);
         Utils.writeObject(currentBranch, commit);
         clearStagingArea();
@@ -315,7 +286,7 @@ public class Repository {
     public static void mergeCommand(String branchName) {
         checkUncommittedChanges();
         checkBranchNameExist(branchName);
-        checkMergeItself(branchName);
+        checkNotMergeItself(branchName);
         checkUntrackedFileNotChanged(HEADS_DIR, branchName);
         checkAncestorBranch(branchName);
         checkFastForward(branchName);
@@ -344,6 +315,27 @@ public class Repository {
         }
     }
 
+    private static void checkBranchExist(String branchName) {
+        List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
+        if (!allBranchNames.contains(branchName)) {
+            Utils.exitWithMessage("No such branch exists.");
+        }
+    }
+
+    private static void checkCheckoutNotCurrentBranch(String branchName) {
+        String currentBranchName = Utils.readContentsAsString(HEAD);
+        if (branchName.equals(currentBranchName)) {
+            Utils.exitWithMessage("No need to checkout the current branch.");
+        }
+    }
+
+    private static void checkRemoveNotCurrentBranch(String branchName) {
+        String currentBranchName = Utils.readContentsAsString(HEAD);
+        if (branchName.equals(currentBranchName)) {
+            Utils.exitWithMessage("Cannot remove the current branch.");
+        }
+    }
+
     private static void checkBranchNameExist(String branchName) {
         List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
         if (!allBranchNames.contains(branchName)) {
@@ -365,7 +357,7 @@ public class Repository {
         }
     }
 
-    private static void checkMergeItself(String branchName) {
+    private static void checkNotMergeItself(String branchName) {
         String branchHeadName = Utils.readContentsAsString(HEAD);
         if (branchHeadName.equals(branchName)) {
             Utils.exitWithMessage("Cannot merge a branch with itself.");
@@ -421,6 +413,27 @@ public class Repository {
             }
             branchHead = Utils.readObject(
                     Utils.join(COMMITS_DIR, branchHead.getParentCommit()), Commit.class);
+        }
+    }
+
+    private static String getFullCommitId(String commitId) {
+        // TODO
+        return null;
+    }
+
+    /** Replace file in CWD by the files in specific commit.
+     * The commit can be read from COMMITS_DIR or HEADS_DIR. */
+    private static void replaceFilesInCWD(File dir, String name) {
+        Commit commit = Utils.readObject(Utils.join(dir, name), Commit.class);
+        List<String> allFileNames = Utils.plainFilenamesIn(CWD);
+        for (var fileName : allFileNames) {
+            if (!commit.getHashMap().containsKey(fileName)) {
+                Utils.restrictedDelete(fileName);
+            }
+        }
+        for (var entry : commit.getHashMap().entrySet()) {
+            File f = Utils.join(CWD, entry.getKey());
+            Utils.writeContents(f, Utils.readContents(Utils.join(BLOBS_DIR, entry.getValue())));
         }
     }
 
