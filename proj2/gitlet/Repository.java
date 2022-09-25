@@ -25,19 +25,19 @@ public class Repository {
     /** The .gitlet directory. */
     public static final File GITLET_DIR = Utils.join(CWD, ".gitlet");
 
-    /** The stagina area directory. */
+    /** The staging area directory. */
     public static final File STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
 
     /** The removed area directory. */
     public static final File REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
 
-    /** The commits directory. */
+    /** The commit directory. */
     public static final File COMMITS_DIR = Utils.join(GITLET_DIR, "commits");
 
-    /** The blobs directory. */
+    /** The blob directory. */
     public static final File BLOBS_DIR = Utils.join(GITLET_DIR, "blobs");
 
-    /** The branches directory. */
+    /** The branch directory. */
     public static final File HEADS_DIR = Utils.join(GITLET_DIR, "heads");
 
     /** The HEAD file. */
@@ -45,7 +45,7 @@ public class Repository {
 
     /**
      * .gitlet/ - restore the information of a repository
-     *      - staging area/ - added files will be in staging area
+     *      - staging area/ - stage files for addition
      *      - removed area/ - stage files for removal
      *      - commits/ - all commits in commits directory
      *      - blobs/ - the saved contents of files
@@ -54,8 +54,8 @@ public class Repository {
      */
     public static void initCommand() {
         if (Repository.isInitialized()) {
-            Utils.exitWithMessage("%s", "A Gitlet version-control system " +
-                    "already exists in the current directory.");
+            Utils.exitWithMessage("%s", "A Gitlet version-control system "
+                    + "already exists in the current directory.");
         }
         GITLET_DIR.mkdir();
         STAGING_AREA_DIR.mkdir();
@@ -135,8 +135,8 @@ public class Repository {
     public static void rmCommand(String rmFileName) {
         List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-        if (!stagingFileNames.contains(rmFileName) &&
-                !currentCommit.getHashMap().containsKey(rmFileName)) {
+        if (!stagingFileNames.contains(rmFileName)
+                && !currentCommit.getHashMap().containsKey(rmFileName)) {
             Utils.exitWithMessage("No reason to remove the file.");
         }
         if (stagingFileNames.contains(rmFileName)) {
@@ -231,10 +231,8 @@ public class Repository {
     }
 
     public static void checkoutFile(String fileName) {
+        checkFileExist(HEAD, fileName);
         Commit headCommit = Utils.readHeadCommit(HEAD);
-        if (!headCommit.getHashMap().containsKey(fileName)) {
-            Utils.exitWithMessage("File does not exist in that commit.");
-        }
         File currentFile = Utils.join(CWD, fileName);
         String headFileHash = headCommit.getHashMap().get(fileName);
         Utils.writeContents(currentFile, Utils.readContents(Utils.join(BLOBS_DIR, headFileHash)));
@@ -242,16 +240,11 @@ public class Repository {
 
     public static void checkoutFile(String commitId, String fileName) {
         // TODO: abbreviate commit id
-        List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
-        if (!allCommitIds.contains(commitId)) {
-            Utils.exitWithMessage("No commit with that id exists.");
-        }
-        Commit c = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
-        if (!c.getHashMap().containsKey(fileName)) {
-            Utils.exitWithMessage("File does not exist in that commit.");
-        }
-        String fileHash = c.getHashMap().get(fileName);
+        checkCommitExist(commitId);
+        checkFileExist(COMMITS_DIR, commitId, fileName);
+        Commit commit = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
         File currentFile = Utils.join(CWD, fileName);
+        String fileHash = commit.getHashMap().get(fileName);
         Utils.writeContents(currentFile, Utils.readContents(Utils.join(BLOBS_DIR, fileHash)));
     }
 
@@ -264,15 +257,9 @@ public class Repository {
         if (branchName.equals(currentBranchName)) {
             Utils.exitWithMessage("No need to checkout the current branch.");
         }
-        Commit currentCommit = Utils.readHeadCommit(HEAD);
         List<String> allFileNames = Utils.plainFilenamesIn(CWD);
-        for (var fileName : allFileNames) {
-            if (!currentCommit.getHashMap().containsKey(fileName)) {
-                Utils.exitWithMessage("There is an untracked file in the way; " +
-                        "delete it, or add and commit it first.");
-            }
-        }
         Commit branchHead = Utils.readObject(Utils.join(HEADS_DIR, branchName), Commit.class);
+        checkUntrackedFileNotChanged(HEADS_DIR, branchName);
         for (var fileName : allFileNames) {
             if (!branchHead.getHashMap().containsKey(fileName)) {
                 Utils.restrictedDelete(fileName);
@@ -289,19 +276,13 @@ public class Repository {
     }
 
     public static void branchCommand(String branchName) {
-        List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
-        if (allBranchNames.contains(branchName)) {
-            Utils.exitWithMessage("A branch with that name already exists.");
-        }
+        checkBranchNameNotExist(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         Utils.writeObject(Utils.join(HEADS_DIR, branchName), currentCommit);
     }
 
     public static void rmBranchCommand(String branchName) {
-        List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
-        if (!allBranchNames.contains(branchName)) {
-            Utils.exitWithMessage("A branch with that name does not exist.");
-        }
+        checkBranchNameExist(branchName);
         String currentBranchName = Utils.readContentsAsString(HEAD);
         if (branchName.equals(currentBranchName)) {
             Utils.exitWithMessage("Cannot remove the current branch.");
@@ -311,19 +292,11 @@ public class Repository {
     }
 
     public static void resetCommand(String commitId) {
-        List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
-        if (!allCommitIds.contains(commitId)) {
-            Utils.exitWithMessage("No commit with that id exists.");
-        }
-        Commit currentCommit = Utils.readHeadCommit(HEAD);
-        List<String> allFileNames = Utils.plainFilenamesIn(CWD);
-        for (var fileName : allFileNames) {
-            if (!currentCommit.getHashMap().containsKey(fileName)) {
-                Utils.exitWithMessage("There is an untracked file in the way; " +
-                        "delete it, or add and commit it first.");
-            }
-        }
+        // TODO: abbreviate commit id, reusing checkoutFile
+        checkCommitExist(commitId);
+        checkUntrackedFileNotChanged(COMMITS_DIR, commitId);
         Commit commit = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
+        List<String> allFileNames = Utils.plainFilenamesIn(CWD);
         for (var fileName : allFileNames) {
             if (!commit.getHashMap().containsKey(fileName)) {
                 Utils.restrictedDelete(fileName);
@@ -332,6 +305,122 @@ public class Repository {
         for (var entry : commit.getHashMap().entrySet()) {
             File f = Utils.join(CWD, entry.getKey());
             Utils.writeContents(f, Utils.readContents(Utils.join(BLOBS_DIR, entry.getValue())));
+        }
+        File currentBranch = Utils.readHeadBranch(HEAD);
+        Utils.writeObject(currentBranch, commit);
+        clearStagingArea();
+        clearRemovedArea();
+    }
+
+    public static void mergeCommand(String branchName) {
+        checkUncommittedChanges();
+        checkBranchNameExist(branchName);
+        checkMergeItself(branchName);
+        checkUntrackedFileNotChanged(HEADS_DIR, branchName);
+        checkAncestorBranch(branchName);
+        checkFastForward(branchName);
+
+    }
+
+    private static void checkCommitExist(String commitId) {
+        List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
+        if (!allCommitIds.contains(commitId)) {
+            Utils.exitWithMessage("No commit with that id exists.");
+        }
+    }
+
+    private static void checkFileExist(File head, String fileName) {
+        assert HEAD.equals(head);
+        Commit headCommit = Utils.readHeadCommit(head);
+        if (!headCommit.getHashMap().containsKey(fileName)) {
+            Utils.exitWithMessage("File does not exist in that commit.");
+        }
+    }
+
+    private static void checkFileExist(File commitsDir, String commitId, String fileName) {
+        Commit commit = Utils.readObject(Utils.join(commitsDir, commitId), Commit.class);
+        if (!commit.getHashMap().containsKey(fileName)) {
+            Utils.exitWithMessage("File does not exist in that commit.");
+        }
+    }
+
+    private static void checkBranchNameExist(String branchName) {
+        List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
+        if (!allBranchNames.contains(branchName)) {
+            Utils.exitWithMessage("A branch with that name does not exist.");
+        }
+    }
+
+    private static void checkBranchNameNotExist(String branchName) {
+        List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
+        if (allBranchNames.contains(branchName)) {
+            Utils.exitWithMessage("A branch with that name already exists.");
+        }
+    }
+    private static void checkUncommittedChanges() {
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        List<String> allRemovedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
+        if (!allStagingFileNames.isEmpty() || !allRemovedFileNames.isEmpty()) {
+            Utils.exitWithMessage("You have uncommitted changes.");
+        }
+    }
+
+    private static void checkMergeItself(String branchName) {
+        String branchHeadName = Utils.readContentsAsString(HEAD);
+        if (branchHeadName.equals(branchName)) {
+            Utils.exitWithMessage("Cannot merge a branch with itself.");
+        }
+    }
+
+    /** Check if an untracked file in the current commit would be
+     * overwritten or deleted by the specific commit.
+     * The commit can be read from COMMITS_DIR or HEADS_DIR. */
+    private static void checkUntrackedFileNotChanged(File dir, String name) {
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        List<String> allFileNames = Utils.plainFilenamesIn(CWD);
+        Commit commit = Utils.readObject(Utils.join(dir, name), Commit.class);
+        for (var fileName : allFileNames) {
+            if (!currentCommit.getHashMap().containsKey(fileName)
+                    && commit.getHashMap().containsKey(fileName)) {
+                Utils.exitWithMessage("There is an untracked file in the way; "
+                        + "delete it, or add and commit it first.");
+            }
+        }
+    }
+
+    private static void checkAncestorBranch(String branchName) {
+        Commit branchHead = Utils.readObject(Utils.join(HEADS_DIR, branchName), Commit.class);
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        while (true) {
+            if (currentCommit.getParentCommit() == null) {
+                if (currentCommit.equals(branchHead)) {
+                    Utils.exitWithMessage("Given branch is an ancestor of the current branch.");
+                }
+                break;
+            }
+            if (currentCommit.equals(branchHead)) {
+                Utils.exitWithMessage("Given branch is an ancestor of the current branch.");
+            }
+            currentCommit = Utils.readObject(
+                    Utils.join(COMMITS_DIR, currentCommit.getParentCommit()), Commit.class);
+        }
+    }
+
+    private static void checkFastForward(String branchName) {
+        Commit branchHead = Utils.readObject(Utils.join(HEADS_DIR, branchName), Commit.class);
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        while (true) {
+            if (branchHead.getParentCommit() == null) {
+                if (branchHead.equals(currentCommit)) {
+                    Utils.exitWithMessage("Current branch fast-forwarded.");
+                }
+                break;
+            }
+            if (branchHead.equals(currentCommit)) {
+                Utils.exitWithMessage("Current branch fast-forwarded.");
+            }
+            branchHead = Utils.readObject(
+                    Utils.join(COMMITS_DIR, branchHead.getParentCommit()), Commit.class);
         }
     }
 

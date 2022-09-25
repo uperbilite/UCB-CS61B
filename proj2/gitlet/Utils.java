@@ -245,14 +245,14 @@ class Utils {
         System.exit(0);
     }
 
-    static Commit readHeadCommit(File HEAD) {
-        String branchName = Utils.readContentsAsString(HEAD);
+    static Commit readHeadCommit(File headFile) {
+        String branchName = Utils.readContentsAsString(headFile);
         File branch = Utils.join(HEADS_DIR, branchName);
         return Utils.readObject(branch, Commit.class);
     }
 
-    static File readHeadBranch(File HEAD) {
-        String branchName = Utils.readContentsAsString(HEAD);
+    static File readHeadBranch(File headFile) {
+        String branchName = Utils.readContentsAsString(headFile);
         return Utils.join(HEADS_DIR, branchName);
     }
 }
