@@ -157,13 +157,13 @@ public class Repository {
     public static void logCommand() {
         Commit c = Utils.readHeadCommit(HEAD);
         while (true) {
-            if (c.getParentCommit() == null) {
+            if (c.getParentCommitId() == null) {
                 printLogMessage(c);
                 break;
             }
             printLogMessage(c);
             c = Utils.readObject(
-                    Utils.join(COMMITS_DIR, c.getParentCommit()), Commit.class);
+                    Utils.join(COMMITS_DIR, c.getParentCommitId()), Commit.class);
         }
     }
 
@@ -458,7 +458,7 @@ public class Repository {
         Commit branchHead = Utils.readBranchHeadCommit(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         while (true) {
-            if (currentCommit.getParentCommit() == null) {
+            if (currentCommit.getParentCommitId() == null) {
                 if (currentCommit.equals(branchHead)) {
                     Utils.exitWithMessage("Given branch is an ancestor of the current branch.");
                 }
@@ -468,7 +468,7 @@ public class Repository {
                 Utils.exitWithMessage("Given branch is an ancestor of the current branch.");
             }
             currentCommit = Utils.readObject(
-                    Utils.join(COMMITS_DIR, currentCommit.getParentCommit()), Commit.class);
+                    Utils.join(COMMITS_DIR, currentCommit.getParentCommitId()), Commit.class);
         }
     }
 
@@ -476,7 +476,7 @@ public class Repository {
         Commit branchHead = Utils.readBranchHeadCommit(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         while (true) {
-            if (branchHead.getParentCommit() == null) {
+            if (branchHead.getParentCommitId() == null) {
                 if (branchHead.equals(currentCommit)) {
                     Repository.checkoutBranch(branchName);
                     Utils.exitWithMessage("Current branch fast-forwarded.");
@@ -488,7 +488,7 @@ public class Repository {
                 Utils.exitWithMessage("Current branch fast-forwarded.");
             }
             branchHead = Utils.readObject(
-                    Utils.join(COMMITS_DIR, branchHead.getParentCommit()), Commit.class);
+                    Utils.join(COMMITS_DIR, branchHead.getParentCommitId()), Commit.class);
         }
     }
 
@@ -498,38 +498,50 @@ public class Repository {
     }
 
     private static Commit getSplitPoint(String branchName) {
-        //TODO: graph traversal, not the common node in two list
-        Commit p1 = Utils.readBranchHeadCommit(branchName);
-        Commit p2 = Utils.readHeadCommit(HEAD);
-        Stack<Commit> pStack1 = new Stack<>();
-        Stack<Commit> pStack2 = new Stack<>();
-        while (true) {
-            if (p1.getParentCommit() == null) {
-                pStack1.push(p1);
-                break;
+        Commit currentBranch = Utils.readHeadCommit(HEAD);
+        Commit givenBranch = Utils.readBranchHeadCommit(branchName);
+        // record the commit that can be traversed from currentBranch
+        Set<String> s = new HashSet<>();
+        Queue<Commit> q = new LinkedList<>();
+        s.add(currentBranch.getId());
+        q.offer(currentBranch);
+        while (!q.isEmpty()) {
+            Commit c = q.poll();
+            if (c.getParentCommitId() != null) {
+                Commit t = Utils.readObject(
+                        Utils.join(COMMITS_DIR, c.getParentCommitId()), Commit.class);
+                s.add(t.getId());
+                q.offer(t);
             }
-            pStack1.push(p1);
-            p1 = Utils.readObject(Utils.join(COMMITS_DIR, p1.getParentCommit()), Commit.class);
-        }
-        while (true) {
-            if (p2.getParentCommit() == null) {
-                pStack2.push(p2);
-                break;
-            }
-            pStack2.push(p2);
-            p2 = Utils.readObject(Utils.join(COMMITS_DIR, p2.getParentCommit()), Commit.class);
-        }
-        Commit splitPoint = null;
-        while (!pStack1.isEmpty() && !pStack2.isEmpty()) {
-            p1 = pStack1.pop();
-            p2 = pStack2.pop();
-            if (p1.getId().equals(p2.getId())) {
-                splitPoint = p1;
-            } else {
-                break;
+            if (c.getSecondParentCommitId() != null) {
+                Commit t = Utils.readObject(
+                        Utils.join(COMMITS_DIR, c.getSecondParentCommitId()), Commit.class);
+                s.add(t.getId());
+                q.offer(t);
             }
         }
-        return splitPoint;
+        q.offer(givenBranch);
+        while (!q.isEmpty()) {
+            Commit c = q.poll();
+            if (c.getParentCommitId() != null) {
+                Commit t = Utils.readObject(
+                        Utils.join(COMMITS_DIR, c.getParentCommitId()), Commit.class);
+                if (s.contains(t.getId())) {
+                    return t;
+                }
+                q.offer(t);
+            }
+            if (c.getSecondParentCommitId() != null) {
+                Commit t = Utils.readObject(
+                        Utils.join(COMMITS_DIR, c.getSecondParentCommitId()), Commit.class);
+                if (s.contains(t.getId())) {
+                    return t;
+                }
+                q.offer(t);
+            }
+        }
+        assert false;
+        return null;
     }
 
     private static List<String> getAllFileNamesInMerge(Commit splitPoint,

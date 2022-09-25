@@ -30,10 +30,10 @@ public class Commit implements Serializable {
     private Date timestamp;
 
     /** The previous commit id of this commit. */
-    private String parentCommit;
+    private String parentCommitId;
 
     /** The second previous commit id (used for merge) of this commit. */
-    private String secondParentCommit;
+    private String secondParentCommitId;
 
     /** A mapping of file names to blob references (file's sha-1 id). */
     private TreeMap<String, String> hashByFileName;
@@ -42,21 +42,21 @@ public class Commit implements Serializable {
     public Commit() {
         this.message = "initial commit";
         this.timestamp = new Date();
-        this.parentCommit = null;
-        this.secondParentCommit = null;
+        this.parentCommitId = null;
+        this.secondParentCommitId = null;
         this.hashByFileName = new TreeMap<>();
         this.id = Utils.sha1(message, timestamp.toString());
     }
 
     /** Make a commit with needed information */
-    public Commit(String message, String parentCommit, String secondParentCommit,
+    public Commit(String message, String parentCommitId, String secondParentCommitId,
                   TreeMap<String, String> hashByFileName) {
         this.message = message;
         this.timestamp = new Date();
-        this.parentCommit = parentCommit;
-        this.secondParentCommit = secondParentCommit;
+        this.parentCommitId = parentCommitId;
+        this.secondParentCommitId = secondParentCommitId;
         this.hashByFileName = hashByFileName;
-        this.id = Utils.sha1(message, timestamp.toString(), parentCommit);
+        this.id = Utils.sha1(message, timestamp.toString(), parentCommitId);
         // TODO: add all file to make hash
     }
 
@@ -68,12 +68,12 @@ public class Commit implements Serializable {
         return this.timestamp;
     }
 
-    public String getParentCommit() {
-        return this.parentCommit;
+    public String getParentCommitId() {
+        return this.parentCommitId;
     }
 
-    public String getSecondParentCommit() {
-        return this.secondParentCommit;
+    public String getSecondParentCommitId() {
+        return this.secondParentCommitId;
     }
 
     public String getId() {
