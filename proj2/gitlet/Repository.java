@@ -7,20 +7,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
  *  @author Bilite Deng
  */
 public class Repository {
-    /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Repository class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided two examples for you.
-     */
-
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
 
@@ -98,8 +87,7 @@ public class Repository {
                 return;
             }
         }
-        Utils.writeContents(Utils.join(STAGING_AREA_DIR, addFileName),
-                Utils.readContents(addFile));
+        Utils.writeContents(Utils.join(STAGING_AREA_DIR, addFileName), Utils.readContents(addFile));
     }
 
     public static void commitCommand(String msg, String secondParentCommitId) {
@@ -162,8 +150,7 @@ public class Repository {
                 break;
             }
             printLogMessage(c);
-            c = Utils.readObject(
-                    Utils.join(COMMITS_DIR, c.getParentCommitId()), Commit.class);
+            c = Utils.readObject(Utils.join(COMMITS_DIR, c.getParentCommitId()), Commit.class);
         }
     }
 
@@ -178,9 +165,13 @@ public class Repository {
     private static void printLogMessage(Commit c) {
         System.out.println("===");
         System.out.println("commit " + c.getId());
-        // TODO: handle merged commit
-        SimpleDateFormat f =
-                new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
+        if (c.getSecondParentCommitId() != null) {
+            System.out.println("Merge: "
+                    + c.getParentCommitId().substring(0, 7)
+                    + " "
+                    + c.getSecondParentCommitId().substring(0, 7));
+        }
+        SimpleDateFormat f = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
         System.out.println("Date: " + f.format(c.getTimestamp()));
         System.out.println(c.getMessage());
         System.out.println();
