@@ -301,100 +301,33 @@ public class Repository {
         var givenBranchMap = givenBranch.getHashMap();
         boolean isConflictMerge = false;
         for (var fileName : allFileNames) {
-            if (splitPointMap.containsKey(fileName)
-                    && currentBranchMap.containsKey(fileName)
-                    && givenBranchMap.containsKey(fileName)
-                    && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
-                    && currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+            if (isCase1(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
                 checkoutFile(givenBranch.getId(), fileName);
                 addCommand(fileName);
-            }
-            else if (splitPointMap.containsKey(fileName)
-                    && currentBranchMap.containsKey(fileName)
-                    && givenBranchMap.containsKey(fileName)
-                    && givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
-                    && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+            } else if (isCase2(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
                 continue;
-            }
-            else if ((splitPointMap.containsKey(fileName)
-                    && currentBranchMap.containsKey(fileName)
-                    && givenBranchMap.containsKey(fileName)
-                    && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
-                    && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))
-                    && givenBranchMap.get(fileName).equals(currentBranchMap.get(fileName)))
-                    || (splitPointMap.containsKey(fileName)
-                    && !givenBranchMap.containsKey(fileName)
-                    && !currentBranchMap.containsKey(fileName))) {
+            } else if (isCase3(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
                 continue;
-            }
-            else if (!splitPointMap.containsKey(fileName)
-                    && currentBranchMap.containsKey(fileName)
-                    && !givenBranchMap.containsKey(fileName)) {
+            } else if (isCase4(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
                 continue;
-            }
-            else if (!splitPointMap.containsKey(fileName)
-                    && !currentBranchMap.containsKey(fileName)
-                    && givenBranchMap.containsKey(fileName)) {
+            } else if (isCase5(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
                 checkoutFile(givenBranch.getId(), fileName);
                 addCommand(fileName);
-            }
-            else if (splitPointMap.containsKey(fileName)
-                    && currentBranchMap.containsKey(fileName)
-                    && !givenBranchMap.containsKey(fileName)
-                    && currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+            } else if (isCase6(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
                 rmCommand(fileName);
-            }
-            else if (splitPointMap.containsKey(fileName)
-                    && !currentBranchMap.containsKey(fileName)
-                    && givenBranchMap.containsKey(fileName)
-                    && givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+            } else if (isCase7(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
                 continue;
-            }
-            else {
+            } else {
                 isConflictMerge = true;
                 String mergedContent = "";
-                if (splitPointMap.containsKey(fileName)
-                        && currentBranchMap.containsKey(fileName)
-                        && givenBranchMap.containsKey(fileName)
-                        && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
-                        && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))
-                        && !givenBranchMap.get(fileName).equals(currentBranchMap.get(fileName))) {
-                    mergedContent += "<<<<<<< HEAD\n";
-                    mergedContent += Utils.readContentsAsString(
-                            Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
-                    mergedContent += "=======\n";
-                    mergedContent += Utils.readContentsAsString(
-                            Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += ">>>>>>>\n";
-                }
-                else if (splitPointMap.containsKey(fileName)
-                        && currentBranchMap.containsKey(fileName)
-                        && !givenBranchMap.containsKey(fileName)
-                        &&!currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
-                    mergedContent += "<<<<<<< HEAD\n";
-                    mergedContent += Utils.readContentsAsString(
-                            Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
-                    mergedContent += "=======\n";
-                    mergedContent += ">>>>>>>\n";
-                }
-                else if (splitPointMap.containsKey(fileName)
-                        && !currentBranchMap.containsKey(fileName)
-                        && givenBranchMap.containsKey(fileName)
-                        &&!givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
-                    mergedContent += "<<<<<<< HEAD\n";
-                    mergedContent += "=======\n";
-                    mergedContent += Utils.readContentsAsString(
-                            Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += ">>>>>>>\n";
-                }
-                else {
-                    mergedContent += "<<<<<<< HEAD\n";
-                    mergedContent += Utils.readContentsAsString(
-                            Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
-                    mergedContent += "=======\n";
-                    mergedContent += Utils.readContentsAsString(
-                            Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += ">>>>>>>\n";
+                if (isCase8(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
+                    mergedContent = getMergedContent(currentBranchMap, givenBranchMap, fileName);
+                } else if (isCase9(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
+                    mergedContent = getMergedContent(currentBranchMap, null, fileName);
+                } else if (isCase10(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
+                    mergedContent = getMergedContent(null, givenBranchMap, fileName);
+                } else {
+                    mergedContent = getMergedContent(currentBranchMap, givenBranchMap, fileName);
                 }
                 File mergedFile = Utils.join(CWD, fileName);
                 Utils.writeContents(mergedFile, mergedContent);
@@ -406,6 +339,175 @@ public class Repository {
         if (isConflictMerge) {
             System.out.println("Encountered a merge conflict.");
         }
+    }
+
+    /**
+     * Any files that have been modified in the given branch since the split point,
+     * but not modified in the current branch since the split point should be changed
+     * to their versions in the given branch
+     */
+    private static boolean isCase1(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return splitPointMap.containsKey(fileName)
+                && currentBranchMap.containsKey(fileName)
+                && givenBranchMap.containsKey(fileName)
+                && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                && currentBranchMap.get(fileName).equals(splitPointMap.get(fileName));
+    }
+
+    /**
+     * Any files that have been modified in the current branch but not in the given
+     * branch since the split point should stay as they are.
+     */
+    private static boolean isCase2(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return splitPointMap.containsKey(fileName)
+                && currentBranchMap.containsKey(fileName)
+                && givenBranchMap.containsKey(fileName)
+                && givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName));
+    }
+
+    /**
+     * Any files that have been modified in both the current and given branch in the
+     * same way (i.e., both files now have the same content or were both removed) are
+     * left unchanged by the merge.
+     */
+    private static boolean isCase3(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return (splitPointMap.containsKey(fileName)
+                && currentBranchMap.containsKey(fileName)
+                && givenBranchMap.containsKey(fileName)
+                && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                && givenBranchMap.get(fileName).equals(currentBranchMap.get(fileName)))
+                || (splitPointMap.containsKey(fileName)
+                && !givenBranchMap.containsKey(fileName)
+                && !currentBranchMap.containsKey(fileName));
+    }
+
+    /**
+     * Any files that were not present at the split point and are present only in
+     * the current branch should remain as they are.
+     */
+    private static boolean isCase4(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return !splitPointMap.containsKey(fileName)
+                && currentBranchMap.containsKey(fileName)
+                && !givenBranchMap.containsKey(fileName);
+    }
+
+    /**
+     * Any files that were not present at the split point and are present only in
+     * the given branch should be checked out and staged.
+     */
+    private static boolean isCase5(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return !splitPointMap.containsKey(fileName)
+                && !currentBranchMap.containsKey(fileName)
+                && givenBranchMap.containsKey(fileName);
+    }
+
+    /**
+     * Any files present at the split point, unmodified in the current branch,
+     * and absent in the given branch should be removed (and untracked).
+     */
+    private static boolean isCase6(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return splitPointMap.containsKey(fileName)
+                && currentBranchMap.containsKey(fileName)
+                && !givenBranchMap.containsKey(fileName)
+                && currentBranchMap.get(fileName).equals(splitPointMap.get(fileName));
+    }
+
+    /**
+     * Any files present at the split point, unmodified in the given branch,
+     * and absent in the current branch should remain absent.
+     */
+    private static boolean isCase7(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return splitPointMap.containsKey(fileName)
+                && !currentBranchMap.containsKey(fileName)
+                && givenBranchMap.containsKey(fileName)
+                && givenBranchMap.get(fileName).equals(splitPointMap.get(fileName));
+    }
+
+    /**
+     * Any files modified in different ways in the current and given branches,
+     * the contents of both are changed and different from other
+     */
+    private static boolean isCase8(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return splitPointMap.containsKey(fileName)
+                && currentBranchMap.containsKey(fileName)
+                && givenBranchMap.containsKey(fileName)
+                && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                && !givenBranchMap.get(fileName).equals(currentBranchMap.get(fileName));
+    }
+
+    /**
+     * Any files modified in different ways in the current and given branches,
+     * the contents of one are changed and the other file is deleted, the file
+     * in given branch is deleted
+     */
+    private static boolean isCase9(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return splitPointMap.containsKey(fileName)
+                && currentBranchMap.containsKey(fileName)
+                && !givenBranchMap.containsKey(fileName)
+                && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName));
+    }
+
+    /**
+     * Any files modified in different ways in the current and given branches,
+     * the contents of one are changed and the other file is deleted, the file
+     * in current branch is deleted
+     */
+    private static boolean isCase10(TreeMap<String, String> splitPointMap,
+                                   TreeMap<String, String> currentBranchMap,
+                                   TreeMap<String, String> givenBranchMap,
+                                   String fileName) {
+        return splitPointMap.containsKey(fileName)
+                && !currentBranchMap.containsKey(fileName)
+                && givenBranchMap.containsKey(fileName)
+                && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName));
+    }
+
+    private static String getMergedContent(TreeMap<String, String> currentBranchMap,
+                                           TreeMap<String, String> givenBranchMap,
+                                           String fileName) {
+        String mergedContent = "";
+        mergedContent += "<<<<<<< HEAD\n";
+        if (currentBranchMap != null) {
+            mergedContent += Utils.readContentsAsString(
+                Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
+        }
+        mergedContent += "=======\n";
+        if (givenBranchMap != null) {
+            mergedContent += Utils.readContentsAsString(
+                    Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
+        }
+        mergedContent += ">>>>>>>\n";
+        return mergedContent;
     }
 
     private static void checkCommitExist(String commitId) {
