@@ -26,7 +26,7 @@ public class Main {
             case "commit":
                 validateNumArgs(args, 2);
                 validateInitialized();
-                Repository.commitCommand(args[1]);
+                Repository.commitCommand(args[1], null);
                 break;
             case "checkout":
                 validateInitialized();

@@ -258,7 +258,7 @@ class Utils {
         return Utils.join(HEADS_DIR, branchName);
     }
 
-    static Commit readBranchHead(String branchName) {
+    static Commit readBranchHeadCommit(String branchName) {
         String commitId = Utils.readContentsAsString(Utils.join(HEADS_DIR, branchName));
         return Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
     }

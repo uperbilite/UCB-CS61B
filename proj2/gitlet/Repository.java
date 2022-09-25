@@ -3,6 +3,8 @@ package gitlet;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -54,7 +56,7 @@ public class Repository {
      */
     public static void initCommand() {
         if (Repository.isInitialized()) {
-            Utils.exitWithMessage("%s", "A Gitlet version-control system "
+            Utils.exitWithMessage("A Gitlet version-control system "
                     + "already exists in the current directory.");
         }
         GITLET_DIR.mkdir();
@@ -100,7 +102,7 @@ public class Repository {
                 Utils.readContents(addFile));
     }
 
-    public static void commitCommand(String msg) {
+    public static void commitCommand(String msg, String secondParentCommitId) {
         if (msg.length() == 0) {
             Utils.exitWithMessage("Please enter a commit message.");
         }
@@ -123,7 +125,7 @@ public class Repository {
             assert hashByFileName.containsKey(removedName);
             hashByFileName.remove(removedName);
         }
-        Commit newCommit = new Commit(msg, currentCommit.getId(), null,
+        Commit newCommit = new Commit(msg, currentCommit.getId(), secondParentCommitId,
                 hashByFileName);
         Utils.writeObject(Utils.join(COMMITS_DIR, newCommit.getId()), newCommit);
         File currentBranch = Utils.readHeadBranch(HEAD);
@@ -290,7 +292,74 @@ public class Repository {
         checkUntrackedFileNotChanged(HEADS_DIR, branchName);
         checkAncestorBranch(branchName);
         checkFastForward(branchName);
-
+        Commit splitPoint = getSplitPoint(branchName);
+        Commit currentBranch = Utils.readHeadCommit(HEAD);
+        Commit givenBranch = Utils.readBranchHeadCommit(branchName);
+        List<String> allFileNames = getAllFileNamesInMerge(splitPoint, currentBranch, givenBranch);
+        var splitPointMap = splitPoint.getHashMap();
+        var currentBranchMap = currentBranch.getHashMap();
+        var givenBranchMap = givenBranch.getHashMap();
+        boolean isConflictMerge = false;
+        for (var fileName : allFileNames) {
+            if (splitPointMap.containsKey(fileName)
+                    && currentBranchMap.containsKey(fileName)
+                    && givenBranchMap.containsKey(fileName)
+                    && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                    && currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+                checkoutFile(givenBranch.getId(), fileName);
+                addCommand(fileName);
+            }
+            else if (splitPointMap.containsKey(fileName)
+                    && currentBranchMap.containsKey(fileName)
+                    && givenBranchMap.containsKey(fileName)
+                    && givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                    && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+                continue;
+            }
+            else if ((splitPointMap.containsKey(fileName)
+                    && currentBranchMap.containsKey(fileName)
+                    && givenBranchMap.containsKey(fileName)
+                    && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                    && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                    && givenBranchMap.get(fileName).equals(currentBranchMap.get(fileName)))
+                    || (splitPointMap.containsKey(fileName)
+                    && !givenBranchMap.containsKey(fileName)
+                    && !currentBranchMap.containsKey(fileName))) {
+                continue;
+            }
+            else if (!splitPointMap.containsKey(fileName)
+                    && currentBranchMap.containsKey(fileName)
+                    && !givenBranchMap.containsKey(fileName)) {
+                continue;
+            }
+            else if (!splitPointMap.containsKey(fileName)
+                    && !currentBranchMap.containsKey(fileName)
+                    && givenBranchMap.containsKey(fileName)) {
+                checkoutFile(givenBranch.getId(), fileName);
+                addCommand(fileName);
+            }
+            else if (splitPointMap.containsKey(fileName)
+                    && currentBranchMap.containsKey(fileName)
+                    && !givenBranchMap.containsKey(fileName)
+                    && currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+                rmCommand(fileName);
+            }
+            else if (splitPointMap.containsKey(fileName)
+                    && !currentBranchMap.containsKey(fileName)
+                    && givenBranchMap.containsKey(fileName)
+                    && givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+                continue;
+            }
+            else {
+                //TODO
+                isConflictMerge = true;
+            }
+        }
+        commitCommand("Merged " + branchName + " into " + Utils.readContentsAsString(HEAD) + ".",
+                givenBranch.getId());
+        if (isConflictMerge) {
+            System.out.println("Encountered a merge conflict.");
+        }
     }
 
     private static void checkCommitExist(String commitId) {
@@ -374,7 +443,7 @@ public class Repository {
         if (dir.equals(COMMITS_DIR)) {
             commit = Utils.readObject(Utils.join(dir, name), Commit.class);
         } else if (dir.equals(HEADS_DIR)) {
-            commit = Utils.readBranchHead(name);
+            commit = Utils.readBranchHeadCommit(name);
         }
         for (var fileName : allFileNames) {
             if (!currentCommit.getHashMap().containsKey(fileName)
@@ -386,7 +455,7 @@ public class Repository {
     }
 
     private static void checkAncestorBranch(String branchName) {
-        Commit branchHead = Utils.readBranchHead(branchName);
+        Commit branchHead = Utils.readBranchHeadCommit(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         while (true) {
             if (currentCommit.getParentCommit() == null) {
@@ -404,16 +473,18 @@ public class Repository {
     }
 
     private static void checkFastForward(String branchName) {
-        Commit branchHead = Utils.readBranchHead(branchName);
+        Commit branchHead = Utils.readBranchHeadCommit(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         while (true) {
             if (branchHead.getParentCommit() == null) {
                 if (branchHead.equals(currentCommit)) {
+                    Repository.checkoutBranch(branchName);
                     Utils.exitWithMessage("Current branch fast-forwarded.");
                 }
                 break;
             }
             if (branchHead.getId().equals(currentCommit.getId())) {
+                Repository.checkoutBranch(branchName);
                 Utils.exitWithMessage("Current branch fast-forwarded.");
             }
             branchHead = Utils.readObject(
@@ -426,6 +497,53 @@ public class Repository {
         return null;
     }
 
+    private static Commit getSplitPoint(String branchName) {
+        //TODO: graph traversal, not the common node in two list
+        Commit p1 = Utils.readBranchHeadCommit(branchName);
+        Commit p2 = Utils.readHeadCommit(HEAD);
+        Stack<Commit> pStack1 = new Stack<>();
+        Stack<Commit> pStack2 = new Stack<>();
+        while (true) {
+            if (p1.getParentCommit() == null) {
+                pStack1.push(p1);
+                break;
+            }
+            pStack1.push(p1);
+            p1 = Utils.readObject(Utils.join(COMMITS_DIR, p1.getParentCommit()), Commit.class);
+        }
+        while (true) {
+            if (p2.getParentCommit() == null) {
+                pStack2.push(p2);
+                break;
+            }
+            pStack2.push(p2);
+            p2 = Utils.readObject(Utils.join(COMMITS_DIR, p2.getParentCommit()), Commit.class);
+        }
+        Commit splitPoint = null;
+        while (!pStack1.isEmpty() && !pStack2.isEmpty()) {
+            p1 = pStack1.pop();
+            p2 = pStack2.pop();
+            if (p1.getId().equals(p2.getId())) {
+                splitPoint = p1;
+            } else {
+                break;
+            }
+        }
+        return splitPoint;
+    }
+
+    private static List<String> getAllFileNamesInMerge(Commit splitPoint,
+                                                       Commit currentHead,
+                                                       Commit branchHead) {
+        List<String> splitPointFileNames = new ArrayList<>(splitPoint.getHashMap().keySet());
+        List<String> currentHeadFileNames = new ArrayList<>(currentHead.getHashMap().keySet());
+        List<String> branchHeadFileNames = new ArrayList<>(branchHead.getHashMap().keySet());
+        return Stream.of(splitPointFileNames, currentHeadFileNames, branchHeadFileNames)
+                .flatMap(Collection::stream)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
     /** Replace file in CWD by the files in specific commit.
      * The commit can be read from COMMITS_DIR or HEADS_DIR. */
     private static void replaceFilesInCWD(File dir, String name) {
@@ -433,7 +551,7 @@ public class Repository {
         if (dir.equals(COMMITS_DIR)) {
             commit = Utils.readObject(Utils.join(dir, name), Commit.class);
         } else if (dir.equals(HEADS_DIR)) {
-            commit = Utils.readBranchHead(name);
+            commit = Utils.readBranchHeadCommit(name);
         }
         List<String> allFileNames = Utils.plainFilenamesIn(CWD);
         for (var fileName : allFileNames) {
