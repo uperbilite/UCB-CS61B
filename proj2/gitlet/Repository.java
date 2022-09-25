@@ -351,8 +351,54 @@ public class Repository {
                 continue;
             }
             else {
-                //TODO
                 isConflictMerge = true;
+                String mergedContent = "";
+                if (splitPointMap.containsKey(fileName)
+                        && currentBranchMap.containsKey(fileName)
+                        && givenBranchMap.containsKey(fileName)
+                        && !givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                        && !currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))
+                        && !givenBranchMap.get(fileName).equals(currentBranchMap.get(fileName))) {
+                    mergedContent += "<<<<<<< HEAD\n";
+                    mergedContent += Utils.readContentsAsString(
+                            Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
+                    mergedContent += "\n=======\n";
+                    mergedContent += Utils.readContentsAsString(
+                            Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
+                    mergedContent += "\n>>>>>>>";
+                }
+                else if (splitPointMap.containsKey(fileName)
+                        && currentBranchMap.containsKey(fileName)
+                        && !givenBranchMap.containsKey(fileName)
+                        &&!currentBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+                    mergedContent += "<<<<<<< HEAD\n";
+                    mergedContent += Utils.readContentsAsString(
+                            Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
+                    mergedContent += "\n=======\n";
+                    mergedContent += ">>>>>>>";
+                }
+                else if (splitPointMap.containsKey(fileName)
+                        && !currentBranchMap.containsKey(fileName)
+                        && givenBranchMap.containsKey(fileName)
+                        &&!givenBranchMap.get(fileName).equals(splitPointMap.get(fileName))) {
+                    mergedContent += "<<<<<<< HEAD\n";
+                    mergedContent += "=======\n";
+                    mergedContent += Utils.readContentsAsString(
+                            Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
+                    mergedContent += "\n>>>>>>>";
+                }
+                else {
+                    mergedContent += "<<<<<<< HEAD\n";
+                    mergedContent += Utils.readContentsAsString(
+                            Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
+                    mergedContent += "\n=======\n";
+                    mergedContent += Utils.readContentsAsString(
+                            Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
+                    mergedContent += "\n>>>>>>>";
+                }
+                File mergedFile = Utils.join(CWD, fileName);
+                Utils.writeContents(mergedFile, mergedContent);
+                addCommand(fileName);
             }
         }
         commitCommand("Merged " + branchName + " into " + Utils.readContentsAsString(HEAD) + ".",
