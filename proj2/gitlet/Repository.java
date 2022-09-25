@@ -365,7 +365,7 @@ public class Repository {
                     mergedContent += "=======\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += ">>>>>>>";
+                    mergedContent += ">>>>>>>\n";
                 }
                 else if (splitPointMap.containsKey(fileName)
                         && currentBranchMap.containsKey(fileName)
@@ -375,7 +375,7 @@ public class Repository {
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
                     mergedContent += "=======\n";
-                    mergedContent += ">>>>>>>";
+                    mergedContent += ">>>>>>>\n";
                 }
                 else if (splitPointMap.containsKey(fileName)
                         && !currentBranchMap.containsKey(fileName)
@@ -385,7 +385,7 @@ public class Repository {
                     mergedContent += "=======\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += ">>>>>>>";
+                    mergedContent += ">>>>>>>\n";
                 }
                 else {
                     mergedContent += "<<<<<<< HEAD\n";
@@ -394,7 +394,7 @@ public class Repository {
                     mergedContent += "=======\n";
                     mergedContent += Utils.readContentsAsString(
                             Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
-                    mergedContent += ">>>>>>>";
+                    mergedContent += ">>>>>>>\n";
                 }
                 File mergedFile = Utils.join(CWD, fileName);
                 Utils.writeContents(mergedFile, mergedContent);
