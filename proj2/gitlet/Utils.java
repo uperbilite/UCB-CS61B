@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
 
+import static gitlet.Repository.COMMITS_DIR;
 import static gitlet.Repository.HEADS_DIR;
 
 
@@ -248,11 +249,17 @@ class Utils {
     static Commit readHeadCommit(File headFile) {
         String branchName = Utils.readContentsAsString(headFile);
         File branch = Utils.join(HEADS_DIR, branchName);
-        return Utils.readObject(branch, Commit.class);
+        String headCommitId = Utils.readContentsAsString(branch);
+        return Utils.readObject(Utils.join(COMMITS_DIR, headCommitId), Commit.class);
     }
 
     static File readHeadBranch(File headFile) {
         String branchName = Utils.readContentsAsString(headFile);
         return Utils.join(HEADS_DIR, branchName);
+    }
+
+    static Commit readBranchHead(String branchName) {
+        String commitId = Utils.readContentsAsString(Utils.join(HEADS_DIR, branchName));
+        return Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
     }
 }

@@ -65,7 +65,7 @@ public class Repository {
         HEADS_DIR.mkdir();
         Commit initialCommit = new Commit();
         Utils.writeObject(Utils.join(COMMITS_DIR, initialCommit.getId()), initialCommit);
-        Utils.writeObject(Utils.join(HEADS_DIR, "master"), initialCommit);
+        Utils.writeContents(Utils.join(HEADS_DIR, "master"), initialCommit.getId());
         Utils.writeContents(HEAD, "master");
     }
 
@@ -127,7 +127,7 @@ public class Repository {
                 hashByFileName);
         Utils.writeObject(Utils.join(COMMITS_DIR, newCommit.getId()), newCommit);
         File currentBranch = Utils.readHeadBranch(HEAD);
-        Utils.writeObject(currentBranch, newCommit);
+        Utils.writeContents(currentBranch, newCommit.getId());
         clearStagingArea();
         clearRemovedArea();
     }
@@ -145,7 +145,7 @@ public class Repository {
         if (currentCommit.getHashMap().containsKey(rmFileName)) {
             File rmFile = Utils.join(REMOVED_AREA_DIR, rmFileName);
             // don't need the removedFile's content, only it's name
-            Utils.writeObject(rmFile, "");
+            Utils.writeContents(rmFile, "");
             if (Utils.join(CWD, rmFileName).exists()) {
                 Utils.restrictedDelete(rmFileName);
             }
@@ -261,7 +261,7 @@ public class Repository {
     public static void branchCommand(String branchName) {
         checkBranchNameNotExist(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-        Utils.writeObject(Utils.join(HEADS_DIR, branchName), currentCommit);
+        Utils.writeContents(Utils.join(HEADS_DIR, branchName), currentCommit.getId());
     }
 
     public static void rmBranchCommand(String branchName) {
@@ -278,7 +278,7 @@ public class Repository {
         replaceFilesInCWD(COMMITS_DIR, commitId);
         Commit commit = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
         File currentBranch = Utils.readHeadBranch(HEAD);
-        Utils.writeObject(currentBranch, commit);
+        Utils.writeContents(currentBranch, commit.getId());
         clearStagingArea();
         clearRemovedArea();
     }
@@ -370,7 +370,12 @@ public class Repository {
     private static void checkUntrackedFileNotChanged(File dir, String name) {
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         List<String> allFileNames = Utils.plainFilenamesIn(CWD);
-        Commit commit = Utils.readObject(Utils.join(dir, name), Commit.class);
+        Commit commit = null;
+        if (dir.equals(COMMITS_DIR)) {
+            commit = Utils.readObject(Utils.join(dir, name), Commit.class);
+        } else if (dir.equals(HEADS_DIR)) {
+            commit = Utils.readBranchHead(name);
+        }
         for (var fileName : allFileNames) {
             if (!currentCommit.getHashMap().containsKey(fileName)
                     && commit.getHashMap().containsKey(fileName)) {
@@ -381,7 +386,7 @@ public class Repository {
     }
 
     private static void checkAncestorBranch(String branchName) {
-        Commit branchHead = Utils.readObject(Utils.join(HEADS_DIR, branchName), Commit.class);
+        Commit branchHead = Utils.readBranchHead(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         while (true) {
             if (currentCommit.getParentCommit() == null) {
@@ -390,7 +395,7 @@ public class Repository {
                 }
                 break;
             }
-            if (currentCommit.equals(branchHead)) {
+            if (currentCommit.getId().equals(branchHead.getId())) {
                 Utils.exitWithMessage("Given branch is an ancestor of the current branch.");
             }
             currentCommit = Utils.readObject(
@@ -399,7 +404,7 @@ public class Repository {
     }
 
     private static void checkFastForward(String branchName) {
-        Commit branchHead = Utils.readObject(Utils.join(HEADS_DIR, branchName), Commit.class);
+        Commit branchHead = Utils.readBranchHead(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         while (true) {
             if (branchHead.getParentCommit() == null) {
@@ -408,7 +413,7 @@ public class Repository {
                 }
                 break;
             }
-            if (branchHead.equals(currentCommit)) {
+            if (branchHead.getId().equals(currentCommit.getId())) {
                 Utils.exitWithMessage("Current branch fast-forwarded.");
             }
             branchHead = Utils.readObject(
@@ -424,7 +429,12 @@ public class Repository {
     /** Replace file in CWD by the files in specific commit.
      * The commit can be read from COMMITS_DIR or HEADS_DIR. */
     private static void replaceFilesInCWD(File dir, String name) {
-        Commit commit = Utils.readObject(Utils.join(dir, name), Commit.class);
+        Commit commit = null;
+        if (dir.equals(COMMITS_DIR)) {
+            commit = Utils.readObject(Utils.join(dir, name), Commit.class);
+        } else if (dir.equals(HEADS_DIR)) {
+            commit = Utils.readBranchHead(name);
+        }
         List<String> allFileNames = Utils.plainFilenamesIn(CWD);
         for (var fileName : allFileNames) {
             if (!commit.getHashMap().containsKey(fileName)) {
