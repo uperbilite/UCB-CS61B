@@ -193,6 +193,14 @@ public class Repository {
     }
 
     public static void statusCommand() {
+        printBranchesStatus();
+        printStagedStatus();
+        printRemovedStatus();
+        printModificationsStatus();
+        printUntrackedStatus();
+    }
+
+    private static void printBranchesStatus() {
         System.out.println("=== Branches ===");
         List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
         String currentBranchName = Utils.readContentsAsString(HEAD);
@@ -205,22 +213,104 @@ public class Repository {
             }
         }
         System.out.println();
+    }
+
+    private static void printStagedStatus() {
         System.out.println("=== Staged Files ===");
         List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
         Collections.sort(stagingFileNames);
         stagingFileNames.forEach(System.out::println);
         System.out.println();
+    }
+
+    private static void printRemovedStatus() {
         System.out.println("=== Removed Files ===");
         List<String> removedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
         Collections.sort(removedFileNames);
         removedFileNames.forEach(System.out::println);
         System.out.println();
+    }
+
+    private static void printModificationsStatus() {
         System.out.println("=== Modifications Not Staged For Commit ===");
-        // TODO
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        List<String> allRemovedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
+        List<String> allFileNamesInCWD = Utils.plainFilenamesIn(CWD);
+        List<String> allFileNames = Stream.of(
+                new ArrayList<>(currentCommit.getHashMap().keySet()),
+                        allStagingFileNames,
+                        allRemovedFileNames,
+                        allFileNamesInCWD)
+                .flatMap(Collection::stream)
+                .distinct()
+                .collect(Collectors.toList());
+        Collections.sort(allFileNames);
+        for (var fileName : allFileNames) {
+            if (isModifiedNotStaged(fileName)) {
+                System.out.println(fileName + " (modified)");
+            } else if (isDeletedNotStaged(fileName)) {
+                System.out.println(fileName + " (deleted)");
+            }
+        }
         System.out.println();
+    }
+
+    private static void printUntrackedStatus() {
         System.out.println("=== Untracked Files ===");
-        // TODO
+        List<String> allFileNamesInCWD = Utils.plainFilenamesIn(CWD);
+        Collections.sort(allFileNamesInCWD);
+        for (var fileName : allFileNamesInCWD) {
+            if (isUntracked(fileName)) {
+                System.out.println(fileName);
+            }
+        }
         System.out.println();
+    }
+
+    /**
+     * Tracked in the current commit, changed in the working directory, but not staged; or
+     * Staged for addition, but with different contents than in the working directory;
+     */
+    private static boolean isModifiedNotStaged(String fileName) {
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        List<String> allFileNamesInCWD = Utils.plainFilenamesIn(CWD);
+        return allFileNamesInCWD.contains(fileName)
+                && ((currentCommit.getHashMap().containsKey(fileName)
+                && !currentCommit.getHashMap().get(fileName).equals(
+                        Utils.sha1(Utils.readContents(Utils.join(CWD, fileName))))
+                && !allStagingFileNames.contains(fileName))
+                || (allStagingFileNames.contains(fileName)
+                && !Utils.sha1(Utils.readContents(Utils.join(STAGING_AREA_DIR, fileName))).equals(
+                        Utils.sha1(Utils.readContents(Utils.join(CWD, fileName))))));
+    }
+
+    /**
+     * Staged for addition, but deleted in the working directory; or
+     * Not staged for removal, but tracked in the current commit and deleted from the
+     * working directory.
+     */
+    private static boolean isDeletedNotStaged(String fileName) {
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        List<String> allRemovedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
+        List<String> allFileNamesInCWD = Utils.plainFilenamesIn(CWD);
+        return (allStagingFileNames.contains(fileName)
+                && !allFileNamesInCWD.contains(fileName))
+                || (!allRemovedFileNames.contains(fileName)
+                && currentCommit.getHashMap().containsKey(fileName)
+                && !allFileNamesInCWD.contains(fileName));
+    }
+
+    /**
+     * files present in the working directory but neither staged for addition nor tracked
+     */
+    private static boolean isUntracked(String fileName) {
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        return !allStagingFileNames.contains(fileName)
+                && !currentCommit.getHashMap().containsKey(fileName);
     }
 
     public static void checkoutFile(String fileName) {
