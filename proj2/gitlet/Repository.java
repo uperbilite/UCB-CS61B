@@ -13,26 +13,29 @@ public class Repository {
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
 
-    /** The .gitlet directory. */
-    public static final File GITLET_DIR = Utils.join(CWD, ".gitlet");
+    /** The .gitlet directory. Can be changed by remote command. */
+    public static File GITLET_DIR = Utils.join(CWD, ".gitlet");
 
-    /** The staging area directory. */
-    public static final File STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
+    /** The staging area directory. Store the file name and file content for stage addition. */
+    public static File STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
 
-    /** The removed area directory. */
-    public static final File REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
+    /** The removed area directory. Store the file name for removal. */
+    public static File REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
 
-    /** The commit directory. */
-    public static final File COMMITS_DIR = Utils.join(GITLET_DIR, "commits");
+    /** The commit directory. File name is commit id, file content is serialized commit object. */
+    public static File COMMITS_DIR = Utils.join(GITLET_DIR, "commits");
 
-    /** The blob directory. */
-    public static final File BLOBS_DIR = Utils.join(GITLET_DIR, "blobs");
+    /** The blob directory. File name is blob id. */
+    public static File BLOBS_DIR = Utils.join(GITLET_DIR, "blobs");
 
-    /** The branch directory. */
-    public static final File HEADS_DIR = Utils.join(GITLET_DIR, "heads");
+    /** The branch directory. File name is branch name, file content is commit id. */
+    public static File HEADS_DIR = Utils.join(GITLET_DIR, "heads");
 
-    /** The HEAD file. */
-    public static final File HEAD = Utils.join(GITLET_DIR, "HEAD");
+    /** The remote repository. File name is remote repository name, file content is remote path. */
+    public static File REMOTES_DIR = Utils.join(GITLET_DIR, "remotes");
+
+    /** The HEAD file. File content is the current branch name. */
+    public static File HEAD = Utils.join(GITLET_DIR, "HEAD");
 
     /**
      * .gitlet/ - restore the information of a repository
@@ -40,7 +43,8 @@ public class Repository {
      *      - removed area/ - stage files for removal
      *      - commits/ - all commits in commits directory
      *      - blobs/ - the saved contents of files
-     *      - heads/ - save all branches
+     *      - heads/ - save all branches name and branch head id
+     *      - remotes/ - all remote repository name and path
      *      - HEAD - store the branch name which currently point to
      */
     public static void initCommand() {
@@ -54,6 +58,7 @@ public class Repository {
         COMMITS_DIR.mkdir();
         BLOBS_DIR.mkdir();
         HEADS_DIR.mkdir();
+        REMOTES_DIR.mkdir();
         Commit initialCommit = new Commit();
         Utils.writeObject(Utils.join(COMMITS_DIR, initialCommit.getId()), initialCommit);
         Utils.writeContents(Utils.join(HEADS_DIR, "master"), initialCommit.getId());
@@ -422,6 +427,51 @@ public class Repository {
         }
     }
 
+    public static void addRemoteCommand(String remoteName, String remotePath) {
+        checkRemoteNameNotExist(remoteName);
+        File remoteFile = Utils.join(REMOTES_DIR, remoteName);
+        Utils.writeContents(remoteFile, remotePath);
+    }
+
+    public static void rmRemoteCommand(String remoteName) {
+        checkRemoteNameExist(remoteName);
+        File remoteFile = Utils.join(REMOTES_DIR, remoteName);
+        remoteFile.delete();
+    }
+
+    public static void pushCommand(String remoteName, String remoteBranchName) {
+        checkRemoteDirExist(remoteName);
+        checkHistoryOfCurrentHead(remoteName, remoteBranchName);
+        Stack<Commit> appendCommits = getAppendCommits(remoteName, remoteBranchName);
+        // TODO
+    }
+
+    private static Stack<Commit> getAppendCommits(String remoteName, String remoteBranchName) {
+        File localDir = GITLET_DIR;
+        Commit c = Utils.readHeadCommit(HEAD);
+        String remotePath = Utils.readContentsAsString(Utils.join(REMOTES_DIR, remoteName));
+        File remoteDir = Utils.join(remotePath);
+        changeGitletDir(remoteDir);
+        Commit remoteBranchHeadCommit = Utils.readBranchHeadCommit(remoteBranchName);
+        changeGitletDir(localDir);
+        Stack<Commit> appendCommits = new Stack<>();
+        while (!c.getId().equals(remoteBranchHeadCommit.getId())) {
+            appendCommits.push(c);
+            c = Utils.readObject(Utils.join(COMMITS_DIR, c.getParentCommitId()), Commit.class);
+        }
+        return appendCommits;
+    }
+
+    public static void fetchCommand(String remoteName, String remoteBranchName) {
+        checkRemoteDirExist(remoteName);
+        checkRemoteBranchExist(remoteName, remoteBranchName);
+        // TODO
+    }
+
+    public static void pullCommand(String remoteName, String remoteBranchName) {
+        // TODO
+    }
+
     /**
      * Any files that have been modified in the given branch since the split point,
      * but not modified in the current branch since the split point should be changed
@@ -592,6 +642,7 @@ public class Repository {
     }
 
     private static void checkCommitExist(String commitId) {
+        // commitId will be null because of the return value of getFullCommitId.
         List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
         if (commitId == null || !allCommitIds.contains(commitId)) {
             Utils.exitWithMessage("No commit with that id exists.");
@@ -647,6 +698,7 @@ public class Repository {
             Utils.exitWithMessage("A branch with that name already exists.");
         }
     }
+
     private static void checkUncommittedChanges() {
         List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
         List<String> allRemovedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
@@ -720,6 +772,64 @@ public class Repository {
                     Utils.join(COMMITS_DIR, branchHead.getParentCommitId()), Commit.class);
         }
     }
+
+    private static void checkRemoteNameExist(String remoteName) {
+        List<String> allRemoteNames = Utils.plainFilenamesIn(REMOTES_DIR);
+        if (!allRemoteNames.contains(remoteName)) {
+            Utils.exitWithMessage("A remote with that name does not exist.");
+        }
+    }
+
+    private static void checkRemoteNameNotExist(String remoteName) {
+        List<String> allRemoteNames = Utils.plainFilenamesIn(REMOTES_DIR);
+        if (allRemoteNames.contains(remoteName)) {
+            Utils.exitWithMessage("A remote with that name already exists.");
+        }
+    }
+
+    private static void checkRemoteDirExist(String remoteName) {
+        String remotePath = Utils.readContentsAsString(Utils.join(REMOTES_DIR, remoteName));
+        File remoteDir = Utils.join(remotePath);
+        if (!remoteDir.exists()) {
+            Utils.exitWithMessage("Remote directory not found.");
+        }
+    }
+
+    private static void checkHistoryOfCurrentHead(String remoteName, String remoteBranchName) {
+        File localDir = GITLET_DIR;
+        Commit c = Utils.readHeadCommit(HEAD);
+        String remotePath = Utils.readContentsAsString(Utils.join(REMOTES_DIR, remoteName));
+        File remoteDir = Utils.join(remotePath);
+        changeGitletDir(remoteDir);
+        Commit remoteBranchHeadCommit = Utils.readBranchHeadCommit(remoteBranchName);
+        changeGitletDir(localDir);
+        while (true) {
+            if (c.getParentCommitId() == null) {
+                if (c.getId().equals(remoteBranchHeadCommit.getId())) {
+                    return;
+                }
+                break;
+            }
+            if (c.getId().equals(remoteBranchHeadCommit.getId())) {
+                return;
+            }
+            c = Utils.readObject(Utils.join(COMMITS_DIR, c.getParentCommitId()), Commit.class);
+        }
+        Utils.exitWithMessage("Please pull down remote changes before pushing.");
+    }
+
+    private static void checkRemoteBranchExist(String remoteName, String remoteBranchName) {
+        File localDir = GITLET_DIR;
+        String remotePath = Utils.readContentsAsString(Utils.join(REMOTES_DIR, remoteName));
+        File remoteDir = Utils.join(remotePath);
+        changeGitletDir(remoteDir);
+        List<String> allRemoteBranchNames = Utils.plainFilenamesIn(REMOTES_DIR);
+        if (!allRemoteBranchNames.contains(remoteBranchName)) {
+            Utils.exitWithMessage("That remote does not have that branch.");
+        }
+        changeGitletDir(localDir);
+    }
+
 
     private static String getFullCommitId(String commitId) {
         List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
@@ -823,5 +933,16 @@ public class Repository {
         for (var removedName : removedFiles) {
             Utils.join(REMOVED_AREA_DIR, removedName).delete();
         }
+    }
+
+    private static void changeGitletDir(File targetGitletDir) {
+        GITLET_DIR = targetGitletDir;
+        STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
+        REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
+        COMMITS_DIR = Utils.join(GITLET_DIR, "commits");
+        BLOBS_DIR = Utils.join(GITLET_DIR, "blobs");
+        HEADS_DIR = Utils.join(GITLET_DIR, "heads");
+        REMOTES_DIR = Utils.join(GITLET_DIR, "remotes");
+        HEAD = Utils.join(GITLET_DIR, "HEAD");
     }
 }

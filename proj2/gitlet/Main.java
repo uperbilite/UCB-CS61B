@@ -91,6 +91,31 @@ public class Main {
                 validateInitialized();
                 Repository.mergeCommand(args[1]);
                 break;
+            case "add-remote":
+                validateNumArgs(args, 3);
+                validateInitialized();
+                Repository.addRemoteCommand(args[1], args[2]);
+                break;
+            case "rm-remote":
+                validateNumArgs(args, 2);
+                validateInitialized();
+                Repository.rmRemoteCommand(args[1]);
+                break;
+            case "push":
+                validateNumArgs(args, 3);
+                validateInitialized();
+                Repository.pushCommand(args[1], args[2]);
+                break;
+            case "fetch":
+                validateNumArgs(args, 3);
+                validateInitialized();
+                Repository.fetchCommand(args[1], args[2]);
+                break;
+            case "pull":
+                validateNumArgs(args, 3);
+                validateInitialized();
+                Repository.pullCommand(args[1], args[2]);
+                break;
             default:
                 Utils.exitWithMessage("No command with that name exists.");
         }
