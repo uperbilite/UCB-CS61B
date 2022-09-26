@@ -14,28 +14,28 @@ public class Repository {
     public static final File CWD = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. Can be changed by remote command. */
-    public static File GITLET_DIR = Utils.join(CWD, ".gitlet");
+    public static final File GITLET_DIR = Utils.join(CWD, ".gitlet");
 
     /** The staging area directory. Store the file name and file content for stage addition. */
-    public static File STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
+    public static final File STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
 
     /** The removed area directory. Store the file name for removal. */
-    public static File REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
+    public static final File REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
 
     /** The commit directory. File name is commit id, file content is serialized commit object. */
-    public static File COMMITS_DIR = Utils.join(GITLET_DIR, "commits");
+    public static final File COMMITS_DIR = Utils.join(GITLET_DIR, "commits");
 
     /** The blob directory. File name is blob id. */
-    public static File BLOBS_DIR = Utils.join(GITLET_DIR, "blobs");
+    public static final File BLOBS_DIR = Utils.join(GITLET_DIR, "blobs");
 
     /** The branch directory. File name is branch name, file content is commit id. */
-    public static File HEADS_DIR = Utils.join(GITLET_DIR, "heads");
+    public static final File HEADS_DIR = Utils.join(GITLET_DIR, "heads");
 
     /** The remote repository. File name is remote repository name, file content is remote path. */
-    public static File REMOTES_DIR = Utils.join(GITLET_DIR, "remotes");
+    public static final File REMOTES_DIR = Utils.join(GITLET_DIR, "remotes");
 
     /** The HEAD file. File content is the current branch name. */
-    public static File HEAD = Utils.join(GITLET_DIR, "HEAD");
+    public static final File HEAD = Utils.join(GITLET_DIR, "HEAD");
 
     /**
      * .gitlet/ - restore the information of a repository
@@ -936,6 +936,7 @@ public class Repository {
     }
 
     private static void changeGitletDir(File targetGitletDir) {
+        /*
         GITLET_DIR = targetGitletDir;
         STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
         REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
@@ -944,5 +945,7 @@ public class Repository {
         HEADS_DIR = Utils.join(GITLET_DIR, "heads");
         REMOTES_DIR = Utils.join(GITLET_DIR, "remotes");
         HEAD = Utils.join(GITLET_DIR, "HEAD");
+         */
+        // TODO
     }
 }
