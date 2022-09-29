@@ -13,11 +13,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     @Override
     public void clear() {
-        if (size > 0) {
-            size = 0;
-            for (int i = 0; i < buckets.length; i++) {
-                buckets[i] = createBucket();
-            }
+        size = 0;
+        for (int i = 0; i < buckets.length; i++) {
+            buckets[i] = createBucket();
         }
     }
 
@@ -63,7 +61,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         Node newNode = createNode(key, value);
         buckets[pos].add(newNode);
         size += 1;
-        if ((double)size / (double)bucketsNum > loadFactor) {
+        if ((double) size / (double) bucketsNum > loadFactor) {
             resize();
         }
     }
@@ -74,8 +72,8 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         for (int i = 0; i < newBuckets.length; i++) {
             newBuckets[i] = createBucket();
         }
-        for (int i = 0; i < buckets.length; i++) {
-            for (var e : buckets[i]) {
+        for (var bucket : buckets) {
+            for (var e : bucket) {
                 int hash = e.key.hashCode();
                 int pos = Math.floorMod(hash, newBucketsNum);
                 newBuckets[pos].add(e);
@@ -87,7 +85,13 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        HashSet<K> result = new HashSet<>();
+        for (var bucket : buckets) {
+            for (var e : bucket) {
+                result.add(e.key);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -102,7 +106,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     @Override
     public Iterator<K> iterator() {
-        throw new UnsupportedOperationException();
+        return new hashMapIterator<>();
     }
 
     /**
@@ -116,6 +120,22 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         Node(K k, V v) {
             key = k;
             value = v;
+        }
+    }
+
+    private class hashMapIterator<K> implements Iterator<K> {
+
+        Iterator keySetItr = keySet().iterator();
+
+
+        @Override
+        public boolean hasNext() {
+            return keySetItr.hasNext();
+        }
+
+        @Override
+        public K next() {
+            return (K) keySetItr.next();
         }
     }
 
