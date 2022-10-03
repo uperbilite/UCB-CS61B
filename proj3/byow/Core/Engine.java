@@ -1,9 +1,9 @@
 package byow.Core;
 
-import byow.TileEngine.TERenderer;
+import byow.InputDemo.InputSource;
+import byow.InputDemo.StringInputDevice;
 import byow.TileEngine.TETile;
 
-import java.math.BigInteger;
 import java.util.*;
 
 public class Engine {
@@ -17,7 +17,7 @@ public class Engine {
     /** the lower the bendingDegree is, the straighter the way is. */
     public static final double bendingDegree = 0;
     /** the max seed number. */
-    public static final BigInteger MAX_SEED = new BigInteger("9223372036854775807");
+    public static final long MAX_SEED = Long.parseLong("9223372036854775807");
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
@@ -56,29 +56,43 @@ public class Engine {
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
 
-        int seed = getSeed(input);
-        Random rand = new Random(seed);
-        Generator ger = new Generator(rand);
+        TETile[][] world = new TETile[WIDTH][HEIGHT];
 
-        return ger.generateWorld();
+        input = input.toLowerCase();
+        InputSource inputSource = new StringInputDevice(input);
+
+        while (inputSource.possibleNextInput()) {
+            char c = inputSource.getNextKey();
+            switch (c) {
+                case 'n':
+                    long seed = getSeed(inputSource);
+                    Random rand = new Random(seed);
+                    Generator ger = new Generator(rand);
+                    world = ger.generateWorld();
+                    break;
+                case 'l':
+                    break;
+                case 'q':
+                    break;
+                default:
+                    // do nothing
+            }
+        }
+
+        return world;
     }
 
-    private int getSeed(String input) {
-        String seed = input.substring(1, input.length() - 1);
-        return Integer.parseInt(seed);
-    }
-
-    public static boolean validateInput(String input) {
-        // TODO
-        return false;
-    }
-
-    public static void main(String[] args) {
-        assert args.length == 1;
-        TERenderer ter = new TERenderer();
-        ter.initialize(WIDTH, HEIGHT);
-        Engine eng = new Engine();
-        TETile[][] world = eng.interactWithInputString(args[0]);
-        ter.renderFrame(world);
+    private long getSeed(InputSource s) {
+        StringBuilder seedString = new StringBuilder();
+        while (s.possibleNextInput()) {
+            char c = s.getNextKey();
+            if (c == 's') {
+                break;
+            }
+            seedString.append(c);
+        }
+        long seed = Long.parseLong(String.valueOf(seedString));
+        assert seed < MAX_SEED;
+        return seed;
     }
 }
