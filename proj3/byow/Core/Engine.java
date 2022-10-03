@@ -3,11 +3,21 @@ package byow.Core;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 
+import java.math.BigInteger;
+import java.util.*;
+
 public class Engine {
-    TERenderer ter = new TERenderer();
-    /* Feel free to change the width and height. */
-    public static final int WIDTH = 80;
-    public static final int HEIGHT = 30;
+    /** WIDTH and HEIGHT should be odd number. */
+    public static final int WIDTH = 81;
+    public static final int HEIGHT = 41;
+    /** more addRoomAttempts means denser room. */
+    public static final int addRoomAttempts = 2000;
+    /** extraRoomSize decide the max size of a room can be. */
+    public static final int extraRoomSize = 2;
+    /** the lower the bendingDegree is, the straighter the way is. */
+    public static final double bendingDegree = 0;
+    /** the max seed number. */
+    public static final BigInteger MAX_SEED = new BigInteger("9223372036854775807");
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
@@ -46,7 +56,29 @@ public class Engine {
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
 
-        TETile[][] finalWorldFrame = null;
-        return finalWorldFrame;
+        int seed = getSeed(input);
+        Random rand = new Random(seed);
+        Generator ger = new Generator(rand);
+
+        return ger.generateWorld();
+    }
+
+    private int getSeed(String input) {
+        String seed = input.substring(1, input.length() - 1);
+        return Integer.parseInt(seed);
+    }
+
+    public static boolean validateInput(String input) {
+        // TODO
+        return false;
+    }
+
+    public static void main(String[] args) {
+        assert args.length == 1;
+        TERenderer ter = new TERenderer();
+        ter.initialize(WIDTH, HEIGHT);
+        Engine eng = new Engine();
+        TETile[][] world = eng.interactWithInputString(args[0]);
+        ter.renderFrame(world);
     }
 }
