@@ -123,7 +123,7 @@ public class HexWorld {
 
         TETile[][] hexagonTiles = new TETile[WIDTH][HEIGHT];
         fillWithNothingTiles(hexagonTiles);
-        Position p = new Position(2, 25);
+        Position p = new Position(10, 30);
         drawWorld(hexagonTiles, p, 3, 3);
 
         ter.renderFrame(hexagonTiles);
