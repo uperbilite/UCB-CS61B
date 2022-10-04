@@ -37,6 +37,7 @@ public class Generator {
         addRandomRooms();
         addHallWays();
         connectRegion();
+        // TODO: simplify world
         return world;
     }
 
@@ -172,6 +173,7 @@ public class Generator {
             seperatedRegionNum.remove(son);
 
             connectPoints.removeIf((Coordinate key) -> {
+                // TODO: add more feature
                 int connectRegionsNum =
                         regionIdsByConnectPoint
                                 .get(key)

@@ -4,10 +4,7 @@ import byow.InputDemo.InputSource;
 import byow.InputDemo.StringInputDevice;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
-import com.sun.tools.doclets.standard.Standard;
 import edu.princeton.cs.introcs.StdDraw;
-import org.checkerframework.checker.units.qual.A;
-import org.eclipse.jetty.util.IO;
 
 import java.awt.*;
 import java.io.BufferedOutputStream;
