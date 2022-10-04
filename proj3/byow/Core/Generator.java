@@ -217,7 +217,7 @@ public class Generator {
     }
 
     private void addDoor(Coordinate c) {
-        world[c.getX()][c.getY()] = Tileset.SAND;
+        world[c.getX()][c.getY()] = Tileset.UNLOCKED_DOOR;
     }
 
     private boolean isPossibleDirection(Coordinate c, Coordinate d) {

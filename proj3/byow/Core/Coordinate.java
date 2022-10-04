@@ -19,6 +19,10 @@ public class Coordinate {
         return this.y;
     }
 
+    public Coordinate shift(int dx, int dy) {
+        return new Coordinate(this.x + dx, this.y + dy);
+    }
+
     public boolean equals(Object o) {
         if (this == o) {
             return true;
