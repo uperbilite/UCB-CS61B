@@ -19,7 +19,7 @@ public class Engine {
     private TERenderer ter = new TERenderer();
     {
         ter.initialize(WIDTH, HEIGHT);
-        StdDraw.setPenColor(Color.WHITE);
+        //StdDraw.setPenColor(Color.WHITE);
     }
     /** WIDTH and HEIGHT should be odd number. */
     public static final int WIDTH = 95;
@@ -41,7 +41,9 @@ public class Engine {
         TETile[][] world;
         displayMainMenuFrame();
         world = interactInMainMenu();
-        startGame(world);
+        if (world != null) {
+            startGame(world);
+        }
     }
 
     /**
@@ -126,7 +128,7 @@ public class Engine {
             }
             seedString.append(c);
         }
-        return Long.parseLong(String.valueOf(seedString));
+        return Long.parseLong(seedString.toString());
     }
 
     private void displayMainMenuFrame() {
@@ -211,7 +213,31 @@ public class Engine {
     }
 
     private void startGame(TETile[][] world) {
+        Avatar ava = new Avatar(world);
         ter.renderFrame(world);
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char c = StdDraw.nextKeyTyped();
+                switch (c) {
+                    case 'w' -> {
+                        ava.moveUp();
+                        ter.renderFrame(world);
+                    }
+                    case 'a' -> {
+                        ava.moveLeft();
+                        ter.renderFrame(world);
+                    }
+                    case 's' -> {
+                        ava.moveDown();
+                        ter.renderFrame(world);
+                    }
+                    case 'd' -> {
+                        ava.moveRight();
+                        ter.renderFrame(world);
+                    }
+                }
+            }
+        }
     }
 
     private String getHistoryInput() {
@@ -238,5 +264,6 @@ public class Engine {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
         Engine eng = new Engine();
+        eng.interactWithKeyboard();
     }
 }

@@ -4,52 +4,59 @@ import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 
 public class Avatar {
-    Coordinate pos;
-    TETile[][] world;
+    private TETile[][] world;
+    /** currennt position. */
+    private Coordinate cpos;
+    /** previous position. */
+    private Coordinate ppos;
+    /** previous position Tile kind. */
+    private TETile pposTile;
 
     Avatar(TETile[][] world) {
-        pos = new Coordinate(1, 1);
         this.world = world;
+        this.cpos = new Coordinate(1, 1);
+        this.ppos = new Coordinate(1, 1);
+        // TODO: not only floor
+        this.pposTile = Tileset.FLOOR;
         refreshAvatarPosition();
     }
 
     public void refreshAvatarPosition() {
-        world[pos.getX()][pos.getY()] = Tileset.AVATAR;
+        world[ppos.getX()][ppos.getY()] = pposTile;
+        ppos = cpos;
+        pposTile = world[ppos.getX()][ppos.getY()];
+        world[cpos.getX()][cpos.getY()] = Tileset.AVATAR;
     }
 
     public void moveUp() {
-        if (world[pos.getX()][pos.getY() + 1] == Tileset.WALL) {
+        if (world[cpos.getX()][cpos.getY() + 1] == Tileset.WALL) {
             return;
         }
-        world[pos.getX()][pos.getY()] = Tileset.FLOOR;
-        pos = pos.shift(0, 1);
+        cpos = cpos.shift(0, 1);
         refreshAvatarPosition();
     }
 
     public void moveDown() {
-        if (world[pos.getX()][pos.getY() - 1] == Tileset.WALL) {
+        if (world[cpos.getX()][cpos.getY() - 1] == Tileset.WALL) {
             return;
         }
-        world[pos.getX()][pos.getY()] = Tileset.FLOOR;
-        pos = pos.shift(0, -1);
+        cpos = cpos.shift(0, -1);
         refreshAvatarPosition();
     }
 
     public void moveLeft() {
-        if (world[pos.getX() - 1][pos.getY()] == Tileset.WALL) {
+        if (world[cpos.getX() - 1][cpos.getY()] == Tileset.WALL) {
             return;
         }
-        world[pos.getX()][pos.getY()] = Tileset.FLOOR;
-        pos = pos.shift(-1, 0);
+        cpos = cpos.shift(-1, 0);
         refreshAvatarPosition();
     }
 
     public void moveRight() {
-        if (world[pos.getX() + 1][pos.getY()] == Tileset.WALL) {
+        if (world[cpos.getX() + 1][cpos.getY()] == Tileset.WALL) {
             return;
         }
-        world[pos.getX()][pos.getY()] = Tileset.FLOOR;
-        pos = pos.shift(1, 0);
+        cpos = cpos.shift(1, 0);
         refreshAvatarPosition();
     }
 }
