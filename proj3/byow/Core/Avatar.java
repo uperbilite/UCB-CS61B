@@ -5,7 +5,7 @@ import byow.TileEngine.Tileset;
 
 public class Avatar {
     private TETile[][] world;
-    /** currennt position. */
+    /** current position. */
     private Coordinate cpos;
     /** previous position. */
     private Coordinate ppos;

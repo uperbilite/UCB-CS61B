@@ -4,6 +4,7 @@ import byow.InputDemo.InputSource;
 import byow.InputDemo.StringInputDevice;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
+import byow.TileEngine.Tileset;
 import edu.princeton.cs.introcs.StdDraw;
 
 import java.awt.*;
@@ -15,15 +16,18 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static byow.TileEngine.TERenderer.TILE_SIZE;
+
 public class Engine {
     private TERenderer ter = new TERenderer();
+    /*
     {
-        ter.initialize(WIDTH, HEIGHT);
-        //StdDraw.setPenColor(Color.WHITE);
-    }
+        ter.initialize(WIDTH, HEIGHT + 2, 0, 0);
+        StdDraw.setPenColor(Color.WHITE);
+    }*/
     /** WIDTH and HEIGHT should be odd number. */
-    public static final int WIDTH = 95;
-    public static final int HEIGHT = 47;
+    public static final int WIDTH = 91;
+    public static final int HEIGHT = 45;
     /** more addRoomAttempts means denser room. */
     public static final int addRoomAttempts = 3500;
     /** extraRoomSize decide the max size of a room can be. */
@@ -102,12 +106,14 @@ public class Engine {
                 case 's' -> ava.moveDown();
                 case 'd' -> ava.moveRight();
                 case ':' -> {
-                    c = inputSource.getNextKey();
-                    if (c == 'q') {
-                        // remove the last 2 characters :q and save the history input string
-                        // return null to quit the game and pass the auto grader
-                        saveGame(input.substring(0, input.length() - 2));
-                        return world;
+                    if (inputSource.possibleNextInput()) {
+                        c = inputSource.getNextKey();
+                        if (c == 'q') {
+                            // remove the last 2 characters :q and save the history input string
+                            // return null to quit the game and pass the auto grader
+                            saveGame(input.substring(0, input.length() - 2));
+                            return world;
+                        }
                     }
                 }
                 default -> {
@@ -149,7 +155,7 @@ public class Engine {
                 "to generating a world, ending with (S)");
         StdDraw.text(WIDTH / 2, HEIGHT / 2 - 2, s);
         StdDraw.show();
-        StdDraw.setFont(new Font("Monaco", Font.BOLD, 14));
+        StdDraw.setFont(new Font("Monaco", Font.BOLD, TILE_SIZE - 2));
     }
 
     private void displayQuitGameFrame() {
@@ -157,7 +163,7 @@ public class Engine {
         StdDraw.setFont(new Font("Monaco", Font.BOLD,  30));
         StdDraw.text(WIDTH / 2, HEIGHT / 2, "End Game");
         StdDraw.show();
-        StdDraw.setFont(new Font("Monaco", Font.BOLD,  14));
+        StdDraw.setFont(new Font("Monaco", Font.BOLD,  TILE_SIZE - 2));
     }
 
     /**
@@ -166,6 +172,7 @@ public class Engine {
      * null
      */
     private TETile[][] interactInMainMenu() {
+        // TODO: handle invalid input exception
         TETile[][] world;
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
@@ -176,6 +183,7 @@ public class Engine {
                     return world;
                 } else if (c == 'l') {
                     world = loadGame();
+                    // TODO: if there is no history file, quit game
                     return world;
                 } else if (c == 'q') {
                     quitGame();
@@ -187,6 +195,7 @@ public class Engine {
     }
 
     private TETile[][] newGame() {
+        // TODO: delete history file
         StringBuilder s = new StringBuilder();
         while (true) {
             displayInputSeedFrame(s.toString());
@@ -210,9 +219,11 @@ public class Engine {
 
     private void quitGame() {
         displayQuitGameFrame();
+        // TODO: quit game and close window
     }
 
     private void startGame(TETile[][] world) {
+        // TODO: get loaded game status
         Avatar ava = new Avatar(world);
         ter.renderFrame(world);
         while (true) {
@@ -234,6 +245,17 @@ public class Engine {
                     case 'd' -> {
                         ava.moveRight();
                         ter.renderFrame(world);
+                    }
+                    case ':' -> {
+                        while (true) {
+                            if (StdDraw.hasNextKeyTyped()) {
+                                c = StdDraw.nextKeyTyped();
+                                if (c == 'q') {
+                                    // TODO: save and quit
+                                }
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -264,6 +286,8 @@ public class Engine {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
         Engine eng = new Engine();
-        eng.interactWithKeyboard();
+        TETile[][] world;
     }
 }
+
+// TODO: HUD display, include Text that describes the tile currently under the mouse pointer.
