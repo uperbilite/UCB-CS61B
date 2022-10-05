@@ -16,7 +16,11 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class Engine {
-    TERenderer ter = new TERenderer();
+    private TERenderer ter = new TERenderer();
+    {
+        ter.initialize(WIDTH, HEIGHT);
+        StdDraw.setPenColor(Color.WHITE);
+    }
     /** WIDTH and HEIGHT should be odd number. */
     public static final int WIDTH = 95;
     public static final int HEIGHT = 47;
@@ -34,13 +38,15 @@ public class Engine {
      * including inputs from the main menu.
      */
     public void interactWithKeyboard() {
-        displayMainMenu();
-        interactInMainMenu();
+        TETile[][] world;
+        displayMainMenuFrame();
+        world = interactInMainMenu();
+        startGame(world);
     }
 
     /**
      * Method used for autograding and testing your code. The input string will be a series
-     * of characters (for example, "n123sswwdasdassadwas", "n123sss:q", "lwww". The engine should
+     * of characters (for example, "n123sswwdasdassadwas", "n123sss:q", "lwww"). The engine should
      * behave exactly as if the user typed these characters into the engine using
      * interactWithKeyboard.
      *
@@ -74,6 +80,7 @@ public class Engine {
         input = input.toLowerCase();
         if (input.charAt(0) == 'l') {
             String history = getHistoryInput();
+            // starting with index 1 to filter the l
             input = history + input.substring(1);
         }
         InputSource inputSource = new StringInputDevice(input);
@@ -81,35 +88,28 @@ public class Engine {
         while (inputSource.possibleNextInput()) {
             char c = inputSource.getNextKey();
             switch (c) {
-                case 'n':
+                case 'n' -> {
                     long seed = getSeed(inputSource);
                     // TODO: validate seed
                     Generator ger = new Generator(new Random(seed));
                     world = ger.generateWorld();
                     ava = new Avatar(world);
-                    break;
-                case 'w':
-                    ava.moveUp();
-                    break;
-                case 'a':
-                    ava.moveLeft();
-                    break;
-                case 's':
-                    ava.moveDown();
-                    break;
-                case 'd':
-                    ava.moveRight();
-                    break;
-                case ':':
+                }
+                case 'w' -> ava.moveUp();
+                case 'a' -> ava.moveLeft();
+                case 's' -> ava.moveDown();
+                case 'd' -> ava.moveRight();
+                case ':' -> {
                     c = inputSource.getNextKey();
                     if (c == 'q') {
-                        saveAndQuit(input.substring(0, input.length() - 2));
-                    } else {
-                        System.out.println("Invalid input!");
+                        // remove the last 2 characters :q and save the history input string
+                        // return null to quit the game and pass the auto grader
+                        saveGame(input.substring(0, input.length() - 2));
+                        return world;
                     }
-                    break;
-                default:
-                    System.out.println("Invalid input!");
+                }
+                default -> {
+                }
             }
         }
 
@@ -126,77 +126,92 @@ public class Engine {
             }
             seedString.append(c);
         }
-        long seed = Long.parseLong(String.valueOf(seedString));
-        return seed;
+        return Long.parseLong(String.valueOf(seedString));
     }
 
-    private void displayMainMenu() {
-        ter.initialize(WIDTH, HEIGHT);
-        StdDraw.setPenColor(Color.WHITE);
+    private void displayMainMenuFrame() {
+        StdDraw.clear(Color.BLACK);
         StdDraw.setFont(new Font("Monaco", Font.BOLD, 30));
         StdDraw.text(WIDTH / 2, HEIGHT / 2 + 3, "New Game (N)");
         StdDraw.text(WIDTH / 2, HEIGHT / 2, "Load Game (L)");
         StdDraw.text(WIDTH / 2, HEIGHT / 2 - 3, "Quit (Q)");
         // TODO: add more options
         StdDraw.show();
+        StdDraw.setFont(new Font("Monaco", Font.BOLD, 14));
     }
 
-    private void interactInMainMenu() {
+    private void displayInputSeedFrame(String s) {
+        StdDraw.clear(Color.BLACK);
+        StdDraw.setFont(new Font("Monaco", Font.BOLD, 30));
+        StdDraw.text(WIDTH / 2, HEIGHT / 2 + 2, "Please input the seed " +
+                "to generating a world, ending with (S)");
+        StdDraw.text(WIDTH / 2, HEIGHT / 2 - 2, s);
+        StdDraw.show();
+        StdDraw.setFont(new Font("Monaco", Font.BOLD, 14));
+    }
+
+    private void displayQuitGameFrame() {
+        StdDraw.clear(Color.BLACK);
+        StdDraw.setFont(new Font("Monaco", Font.BOLD,  30));
+        StdDraw.text(WIDTH / 2, HEIGHT / 2, "End Game");
+        StdDraw.show();
+        StdDraw.setFont(new Font("Monaco", Font.BOLD,  14));
+    }
+
+    /**
+     * Decide How the player can do in main menu, and how the engine will respond to player.
+     * @return If create a new game or load a game, return the world. If quit directly return
+     * null
+     */
+    private TETile[][] interactInMainMenu() {
+        TETile[][] world;
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
                 char c = StdDraw.nextKeyTyped();
                 c = Character.toLowerCase(c);
-                switch (c) {
-                    case 'n':
-                        newGame();
-                        break;
-                    case 'l':
-                        loadGame();
-                        break;
-                    case 'q':
-                        quit();
-                        break;
-                    default:
-                        // TODO: handle more options
+                if (c == 'n') {
+                    world = newGame();
+                    return world;
+                } else if (c == 'l') {
+                    world = loadGame();
+                    return world;
+                } else if (c == 'q') {
+                    quitGame();
+                    return null;
                 }
+                // TODO: handle more options
             }
         }
     }
 
-    private void newGame() {
+    private TETile[][] newGame() {
         StringBuilder s = new StringBuilder();
         while (true) {
-            StdDraw.clear(Color.BLACK);
-            StdDraw.text(WIDTH / 2, HEIGHT / 2 + 2, "Please input the seed" +
-                    " to generating a world, ending with (S)");
-            StdDraw.text(WIDTH / 2, HEIGHT / 2 - 2, s.toString());
-            StdDraw.show();
+            displayInputSeedFrame(s.toString());
             if (StdDraw.hasNextKeyTyped()) {
                 char c = StdDraw.nextKeyTyped();
                 if (c == 's') {
                     long seed = Long.parseLong(s.toString());
                     // TODO: validate seed
-                    if (seed > MAX_SEED) {
-                        break;
-                    }
-                    Random rand = new Random(seed);
-                    TERenderer ter = new TERenderer();
-                    ter.initialize(WIDTH, HEIGHT);
-                    Generator ger = new Generator(rand);
-                    ter.renderFrame(ger.generateWorld());
-                    break;
+                    Generator ger = new Generator(new Random(seed));
+                    return ger.generateWorld();
                 }
                 s.append(c);
             }
         }
     }
 
-    private void loadGame() {
-
+    private TETile[][] loadGame() {
+        String s = getHistoryInput();
+        return interactWithInputString(s);
     }
 
-    private void quit() {
-        System.exit(0);
+    private void quitGame() {
+        displayQuitGameFrame();
+    }
+
+    private void startGame(TETile[][] world) {
+        ter.renderFrame(world);
     }
 
     private String getHistoryInput() {
@@ -208,20 +223,20 @@ public class Engine {
         }
     }
 
-    private void saveAndQuit(String input) {
+    private void saveGame(String history) {
         File f = Paths.get("./history.txt").toFile();
         try {
             BufferedOutputStream str = new BufferedOutputStream(Files.newOutputStream(f.toPath()));
-            str.write(input.getBytes(StandardCharsets.UTF_8));
+            str.write(history.getBytes(StandardCharsets.UTF_8));
             str.close();
         } catch (IOException exp) {
             throw new IllegalArgumentException(exp.getMessage());
         }
-        quit();
     }
 
     public static void main(String... args) {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
+        Engine eng = new Engine();
     }
 }

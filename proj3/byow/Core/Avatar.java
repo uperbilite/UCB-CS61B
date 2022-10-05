@@ -21,6 +21,7 @@ public class Avatar {
         if (world[pos.getX()][pos.getY() + 1] == Tileset.WALL) {
             return;
         }
+        world[pos.getX()][pos.getY()] = Tileset.FLOOR;
         pos = pos.shift(0, 1);
         refreshAvatarPosition();
     }
@@ -29,6 +30,7 @@ public class Avatar {
         if (world[pos.getX()][pos.getY() - 1] == Tileset.WALL) {
             return;
         }
+        world[pos.getX()][pos.getY()] = Tileset.FLOOR;
         pos = pos.shift(0, -1);
         refreshAvatarPosition();
     }
@@ -37,6 +39,7 @@ public class Avatar {
         if (world[pos.getX() - 1][pos.getY()] == Tileset.WALL) {
             return;
         }
+        world[pos.getX()][pos.getY()] = Tileset.FLOOR;
         pos = pos.shift(-1, 0);
         refreshAvatarPosition();
     }
@@ -45,6 +48,7 @@ public class Avatar {
         if (world[pos.getX() + 1][pos.getY()] == Tileset.WALL) {
             return;
         }
+        world[pos.getX()][pos.getY()] = Tileset.FLOOR;
         pos = pos.shift(1, 0);
         refreshAvatarPosition();
     }
