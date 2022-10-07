@@ -3,4 +3,4 @@
 - [Gradescope](https://www.gradescope.com/)
 - [CS 61B Home Page](https://inst.eecs.berkeley.edu/~cs61b/archives.html)
 - [World generate](http://journal.stuffwithstuff.com/2014/12/21/rooms-and-mazes/)
-- [A-Start](https://zhuanlan.zhihu.com/p/54510444)
+- [A-Star](https://zhuanlan.zhihu.com/p/54510444)
