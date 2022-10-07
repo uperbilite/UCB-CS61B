@@ -8,12 +8,13 @@ import java.util.stream.Collectors;
 
 public class Generator {
     private TETile[][] world;
-    /** Random Object given by seed, seed is from command line or keyboard input. */
+    /** Random Object is constructed by seed, seed is from command line or keyboard input. */
     private Random rand;
     private int width;
     private int height;
     private int addRoomAttempts;
     private int extraRoomSize;
+    private double extraDoorDegree;
     private double bendingDegree;
     /** The count of all regions. A region is either a room or an independent hallway. */
     private int regionNum;
@@ -24,9 +25,10 @@ public class Generator {
         this.rand = rand;
         this.width = Engine.WIDTH;
         this.height = Engine.HEIGHT;
-        this.addRoomAttempts = Engine.addRoomAttempts;
-        this.extraRoomSize = Engine.extraRoomSize;
-        this.bendingDegree = Engine.bendingDegree;
+        this.addRoomAttempts = Engine.ADD_ROOM_ATTEMPTS;
+        this.extraRoomSize = Engine.EXTRA_ROOM_SIZE;
+        this.extraDoorDegree = Engine.EXTRA_DOOR_DEGREE;
+        this.bendingDegree = Engine.BENDING_DEGREE;
         this.regionNum = 0;
         this.regionIdByPos = new HashMap<>();
         this.world = new TETile[width][height];
@@ -37,7 +39,7 @@ public class Generator {
         addRandomRooms();
         addHallWays();
         connectRegion();
-        // TODO: simplify world
+        removeDeadEnd();
         return world;
     }
 
@@ -115,6 +117,8 @@ public class Generator {
                     int randomIdx = RandomUtils.uniform(rand, possibleDirections.size());
                     d = possibleDirections.get(randomIdx);
                 }
+
+                assert d != null;
                 Coordinate next = new Coordinate(c.getX() + d.getX(), c.getY() + d.getY());
                 lastDirection = d;
                 grownWay.push(next);
@@ -151,10 +155,10 @@ public class Generator {
 
         while (seperatedRegionNum.size() != 1) {
             int idx = RandomUtils.uniform(rand, connectPoints.size());
-            Coordinate c = connectPoints.get(idx);
-            addDoor(c);
+            Coordinate pos = connectPoints.get(idx);
+            addDoor(pos);
 
-            var regionIds = regionIdsByConnectPoint.get(c);
+            var regionIds = regionIdsByConnectPoint.get(pos);
             var mergedRegionIdsArr =
                     regionIds
                             .stream()
@@ -173,7 +177,9 @@ public class Generator {
             seperatedRegionNum.remove(son);
 
             connectPoints.removeIf((Coordinate key) -> {
-                // TODO: add more feature
+                if (isNextToEachOther(pos, key)) {
+                    return true;
+                }
                 int connectRegionsNum =
                         regionIdsByConnectPoint
                                 .get(key)
@@ -181,9 +187,19 @@ public class Generator {
                                 .map(i -> mergedRegion[i])
                                 .collect(Collectors.toSet())
                                 .size();
-                return connectRegionsNum <= 1;
+                if (connectRegionsNum > 1) {
+                    return false;
+                }
+                if (RandomUtils.uniform(rand) < extraDoorDegree) {
+                    addDoor(key);
+                }
+                return true;
             });
         }
+    }
+
+    private void removeDeadEnd() {
+        // TODO
     }
 
     /**
@@ -195,11 +211,13 @@ public class Generator {
         HashMap<Coordinate, Set<Integer>> regionIdsByPoint = new HashMap<>();
         int[] dx = {-1, 1, 0, 0};
         int[] dy = {0, 0, -1, 1};
+
         for (int i = 1; i < width - 1; i++) {
             for (int j = 1; j < height - 1; j++) {
                 if (world[i][j] != Tileset.WALL) {
                     continue;
                 }
+
                 Set<Integer> regionIds = new HashSet<>();
                 for (int k = 0; k < 4; k++) {
                     int nx = i + dx[k];
@@ -209,9 +227,11 @@ public class Generator {
                         regionIds.add(regionIdByPos.get(c));
                     }
                 }
+
                 if (regionIds.size() < 2) {
                     continue;
                 }
+
                 regionIdsByPoint.put(new Coordinate(i, j), regionIds);
             }
         }
@@ -220,6 +240,23 @@ public class Generator {
 
     private void addDoor(Coordinate c) {
         world[c.getX()][c.getY()] = Tileset.UNLOCKED_DOOR;
+    }
+
+    /**
+     *
+     * @param pos the position just has been added a door to connect two regions
+     * @param removePos the position connect two same region as pos, it is redundant
+     *                  and may be removed (see the removeIf's predicate)
+     * @return return true if removePos is next to pos, else return false
+     */
+    private boolean isNextToEachOther(Coordinate pos, Coordinate removePos) {
+        if (pos.getX() == removePos.getX()) {
+            return Math.abs(pos.getY() - removePos.getY()) == 1;
+        }
+        if (pos.getY() == removePos.getY()) {
+            return Math.abs(pos.getX() - removePos.getX()) == 1;
+        }
+        return false;
     }
 
     private boolean isPossibleDirection(Coordinate c, Coordinate d) {

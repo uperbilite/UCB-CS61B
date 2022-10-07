@@ -6,57 +6,60 @@ import byow.TileEngine.Tileset;
 public class Avatar {
     private TETile[][] world;
     /** current position. */
-    private Coordinate cpos;
+    private Coordinate currentPos;
     /** previous position. */
-    private Coordinate ppos;
+    private Coordinate previousPos;
     /** previous position Tile kind. */
-    private TETile pposTile;
+    private TETile previousPosTile;
 
     Avatar(TETile[][] world) {
         this.world = world;
-        this.cpos = new Coordinate(1, 1);
-        this.ppos = new Coordinate(1, 1);
-        // TODO: not only floor
-        this.pposTile = Tileset.FLOOR;
+        this.currentPos = new Coordinate(1, 1);
+        this.previousPos = new Coordinate(1, 1);
+        this.previousPosTile = Tileset.FLOOR;
         refreshAvatarPosition();
     }
 
+    public Coordinate getCurrentPos() {
+        return this.currentPos;
+    }
+
     public void refreshAvatarPosition() {
-        world[ppos.getX()][ppos.getY()] = pposTile;
-        ppos = cpos;
-        pposTile = world[ppos.getX()][ppos.getY()];
-        world[cpos.getX()][cpos.getY()] = Tileset.AVATAR;
+        world[previousPos.getX()][previousPos.getY()] = previousPosTile;
+        previousPos = currentPos;
+        previousPosTile = world[previousPos.getX()][previousPos.getY()];
+        world[currentPos.getX()][currentPos.getY()] = Tileset.AVATAR;
     }
 
     public void moveUp() {
-        if (world[cpos.getX()][cpos.getY() + 1] == Tileset.WALL) {
+        if (world[currentPos.getX()][currentPos.getY() + 1] == Tileset.WALL) {
             return;
         }
-        cpos = cpos.shift(0, 1);
+        currentPos = currentPos.shift(0, 1);
         refreshAvatarPosition();
     }
 
     public void moveDown() {
-        if (world[cpos.getX()][cpos.getY() - 1] == Tileset.WALL) {
+        if (world[currentPos.getX()][currentPos.getY() - 1] == Tileset.WALL) {
             return;
         }
-        cpos = cpos.shift(0, -1);
+        currentPos = currentPos.shift(0, -1);
         refreshAvatarPosition();
     }
 
     public void moveLeft() {
-        if (world[cpos.getX() - 1][cpos.getY()] == Tileset.WALL) {
+        if (world[currentPos.getX() - 1][currentPos.getY()] == Tileset.WALL) {
             return;
         }
-        cpos = cpos.shift(-1, 0);
+        currentPos = currentPos.shift(-1, 0);
         refreshAvatarPosition();
     }
 
     public void moveRight() {
-        if (world[cpos.getX() + 1][cpos.getY()] == Tileset.WALL) {
+        if (world[currentPos.getX() + 1][currentPos.getY()] == Tileset.WALL) {
             return;
         }
-        cpos = cpos.shift(1, 0);
+        currentPos = currentPos.shift(1, 0);
         refreshAvatarPosition();
     }
 }
