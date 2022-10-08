@@ -10,15 +10,20 @@ import java.util.TreeMap;
 public class Commit implements Serializable {
     /** The message of this Commit. */
     private String message;
+
     /** The SHA-1 hash of this commit.
      * It's also the file name for this commit in commits directory. */
     private String id;
+
     /** The timestamp for this Commit. */
     private Date timestamp;
+
     /** The previous commit id of this commit. */
     private String parentCommitId;
+
     /** The second previous commit id (used for merge) of this commit. */
     private String secondParentCommitId;
+
     /** A mapping of file names to blob references (file's sha-1 id). */
     private TreeMap<String, String> hashByFileName;
 

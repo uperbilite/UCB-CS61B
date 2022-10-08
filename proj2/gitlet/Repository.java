@@ -12,20 +12,28 @@ import java.util.stream.Stream;
 public class Repository {
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
+
     /** The .gitlet directory. Can be changed by remote command. */
     public static final File GITLET_DIR = Utils.join(CWD, ".gitlet");
+
     /** The staging area directory. Store the file name and file content for stage addition. */
     public static final File STAGING_AREA_DIR = Utils.join(GITLET_DIR, "staging area");
+
     /** The removed area directory. Store the file name for removal. */
     public static final File REMOVED_AREA_DIR = Utils.join(GITLET_DIR, "removed area");
+
     /** The commit directory. File name is commit id, file content is serialized commit object. */
     public static final File COMMITS_DIR = Utils.join(GITLET_DIR, "commits");
+
     /** The blob directory. File name is blob id. */
     public static final File BLOBS_DIR = Utils.join(GITLET_DIR, "blobs");
+
     /** The branch directory. File name is branch name, file content is commit id. */
     public static final File HEADS_DIR = Utils.join(GITLET_DIR, "heads");
+
     /** The remote repository. File name is remote repository name, file content is remote path. */
     public static final File REMOTES_DIR = Utils.join(GITLET_DIR, "remotes");
+
     /** The HEAD file. File content is the current branch name. */
     public static final File HEAD = Utils.join(GITLET_DIR, "HEAD");
 
@@ -44,7 +52,6 @@ public class Repository {
             Utils.exitWithMessage("A Gitlet version-control system "
                     + "already exists in the current directory.");
         }
-
         GITLET_DIR.mkdir();
         STAGING_AREA_DIR.mkdir();
         REMOVED_AREA_DIR.mkdir();
@@ -52,7 +59,6 @@ public class Repository {
         BLOBS_DIR.mkdir();
         HEADS_DIR.mkdir();
         REMOTES_DIR.mkdir();
-
         Commit initialCommit = new Commit();
         Utils.writeObject(Utils.join(COMMITS_DIR, initialCommit.getId()), initialCommit);
         Utils.writeContents(Utils.join(HEADS_DIR, "master"), initialCommit.getId());
@@ -65,19 +71,16 @@ public class Repository {
 
     public static void addCommand(String addFileName) {
         File addFile = Utils.join(CWD, addFileName);
-
         if (!addFile.exists()) {
             Utils.exitWithMessage("File does not exist.");
         }
-
         List<String> removedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
         if (removedFileNames.contains(addFileName)) {
             File removedFile = Utils.join(REMOVED_AREA_DIR, addFileName);
             removedFile.delete();
         }
-
-        var hashByFileName = Utils.readHeadCommit(HEAD).getHashMap();
-
+        Commit currentCommit = Utils.readHeadCommit(HEAD);
+        var hashByFileName = currentCommit.getHashMap();
         if (hashByFileName.containsKey(addFileName)) {
             String addFileHash = Utils.sha1(Utils.readContents(addFile));
             String commitFileHash = hashByFileName.get(addFileName);
@@ -89,7 +92,6 @@ public class Repository {
                 return;
             }
         }
-
         Utils.writeContents(Utils.join(STAGING_AREA_DIR, addFileName), Utils.readContents(addFile));
     }
 
@@ -97,33 +99,30 @@ public class Repository {
         if (msg.length() == 0) {
             Utils.exitWithMessage("Please enter a commit message.");
         }
-
         List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
         List<String> removedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
         if (stagingFileNames.isEmpty() && removedFileNames.isEmpty()) {
             Utils.exitWithMessage("No changes added to the commit.");
         }
-
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         var hashByFileName = currentCommit.getHashMap();
-
-        stagingFileNames.forEach(fileName -> {
-            File stagingFile = Utils.join(STAGING_AREA_DIR, fileName);
-            String stagingFileHash = Utils.sha1(Utils.readContents(stagingFile));
+        for (var stagingName : stagingFileNames) {
+            File stagingFile = Utils.join(STAGING_AREA_DIR, stagingName);
+            String stagingHash = Utils.sha1(Utils.readContents(stagingFile));
             // if the key is existed in map, then overwrite it. Otherwise, it will insert a new one
-            hashByFileName.put(fileName, stagingFileHash);
-            Utils.writeObject(Utils.join(BLOBS_DIR, stagingFileHash),
+            hashByFileName.put(stagingName, stagingHash);
+            Utils.writeContents(Utils.join(BLOBS_DIR, stagingHash),
                     Utils.readContents(stagingFile));
-        });
-
-        removedFileNames.forEach(hashByFileName::remove);
-
+        }
+        for (var removedName : removedFileNames) {
+            assert hashByFileName.containsKey(removedName);
+            hashByFileName.remove(removedName);
+        }
         Commit newCommit = new Commit(msg, currentCommit.getId(), secondParentCommitId,
                 hashByFileName);
         Utils.writeObject(Utils.join(COMMITS_DIR, newCommit.getId()), newCommit);
         File currentBranch = Utils.readHeadBranch(HEAD);
         Utils.writeContents(currentBranch, newCommit.getId());
-
         clearStagingArea();
         clearRemovedArea();
     }
@@ -131,16 +130,13 @@ public class Repository {
     public static void rmCommand(String rmFileName) {
         List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-
         if (!stagingFileNames.contains(rmFileName)
                 && !currentCommit.getHashMap().containsKey(rmFileName)) {
             Utils.exitWithMessage("No reason to remove the file.");
         }
-
         if (stagingFileNames.contains(rmFileName)) {
             Utils.join(STAGING_AREA_DIR, rmFileName).delete();
         }
-
         if (currentCommit.getHashMap().containsKey(rmFileName)) {
             File rmFile = Utils.join(REMOVED_AREA_DIR, rmFileName);
             // don't need the removedFile's content, only it's name
@@ -154,7 +150,7 @@ public class Repository {
     public static void logCommand() {
         Commit c = Utils.readHeadCommit(HEAD);
         while (true) {
-            if (c.getParentCommitId() == null) { // initial commit
+            if (c.getParentCommitId() == null) {
                 printLogMessage(c);
                 break;
             }
@@ -164,11 +160,11 @@ public class Repository {
     }
 
     public static void globalLogCommand() {
-        List<String> commitIds = Utils.plainFilenamesIn(COMMITS_DIR);
-        commitIds.forEach(id -> {
-            Commit c = Utils.readObject(Utils.join(COMMITS_DIR, id), Commit.class);
+        List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
+        for (var commitId : allCommitIds) {
+            Commit c = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
             printLogMessage(c);
-        });
+        }
     }
 
     private static void printLogMessage(Commit c) {
@@ -176,7 +172,8 @@ public class Repository {
         System.out.println("commit " + c.getId());
         if (c.getSecondParentCommitId() != null) {
             System.out.println("Merge: "
-                    + c.getParentCommitId().substring(0, 7) + " "
+                    + c.getParentCommitId().substring(0, 7)
+                    + " "
                     + c.getSecondParentCommitId().substring(0, 7));
         }
         SimpleDateFormat f = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
@@ -186,17 +183,15 @@ public class Repository {
     }
 
     public static void findCommand(String msg) {
-        List<String> commitIds = Utils.plainFilenamesIn(COMMITS_DIR);
+        List<String> allCommitIds = Utils.plainFilenamesIn(COMMITS_DIR);
         boolean isFound = false;
-
-        for (var id : commitIds) {
-            Commit c = Utils.readObject(Utils.join(COMMITS_DIR, id), Commit.class);
+        for (var commitId : allCommitIds) {
+            Commit c = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
             if (c.getMessage().equals(msg)) {
                 isFound = true;
                 System.out.println(c.getId());
             }
         }
-
         if (!isFound) {
             Utils.exitWithMessage("Found no commit with that message.");
         }
@@ -212,18 +207,16 @@ public class Repository {
 
     private static void printBranchesStatus() {
         System.out.println("=== Branches ===");
-        List<String> branchNames = Utils.plainFilenamesIn(HEADS_DIR);
+        List<String> allBranchNames = Utils.plainFilenamesIn(HEADS_DIR);
         String currentBranchName = Utils.readContentsAsString(HEAD);
-        Collections.sort(branchNames);
-
-        branchNames.forEach(branchName -> {
+        Collections.sort(allBranchNames);
+        for (var branchName : allBranchNames) {
             if (branchName.equals(currentBranchName)) {
                 System.out.println("*" + branchName);
             } else {
                 System.out.println(branchName);
             }
-        });
-
+        }
         System.out.println();
     }
 
@@ -231,9 +224,7 @@ public class Repository {
         System.out.println("=== Staged Files ===");
         List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
         Collections.sort(stagingFileNames);
-
         stagingFileNames.forEach(System.out::println);
-
         System.out.println();
     }
 
@@ -241,50 +232,44 @@ public class Repository {
         System.out.println("=== Removed Files ===");
         List<String> removedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
         Collections.sort(removedFileNames);
-
         removedFileNames.forEach(System.out::println);
-
         System.out.println();
     }
 
     private static void printModificationsStatus() {
         System.out.println("=== Modifications Not Staged For Commit ===");
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-        List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
-        List<String> removedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
-        List<String> CWDFileNames = Utils.plainFilenamesIn(CWD);
-        List<String> distinctFileNames = Stream.of(
-                new ArrayList<>(currentCommit.getHashMap().keySet()),
-                        stagingFileNames,
-                        removedFileNames,
-                        CWDFileNames)
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        List<String> allRemovedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
+        List<String> allFileNamesInCWD = Utils.plainFilenamesIn(CWD);
+        List<String> allFileNames = Stream.of(
+                        new ArrayList<>(currentCommit.getHashMap().keySet()),
+                        allStagingFileNames,
+                        allRemovedFileNames,
+                        allFileNamesInCWD)
                 .flatMap(Collection::stream)
                 .distinct()
                 .collect(Collectors.toList());
-        Collections.sort(distinctFileNames);
-
-        distinctFileNames.forEach(fileName -> {
+        Collections.sort(allFileNames);
+        for (var fileName : allFileNames) {
             if (isModifiedNotStaged(fileName)) {
                 System.out.println(fileName + " (modified)");
             } else if (isDeletedNotStaged(fileName)) {
                 System.out.println(fileName + " (deleted)");
             }
-        });
-
+        }
         System.out.println();
     }
 
     private static void printUntrackedStatus() {
         System.out.println("=== Untracked Files ===");
-        List<String> CWDFileNames = Utils.plainFilenamesIn(CWD);
-        Collections.sort(CWDFileNames);
-
-        CWDFileNames.forEach(fileName -> {
+        List<String> allFileNamesInCWD = Utils.plainFilenamesIn(CWD);
+        Collections.sort(allFileNamesInCWD);
+        for (var fileName : allFileNamesInCWD) {
             if (isUntracked(fileName)) {
                 System.out.println(fileName);
             }
-        });
-
+        }
         System.out.println();
     }
 
@@ -294,17 +279,16 @@ public class Repository {
      */
     private static boolean isModifiedNotStaged(String fileName) {
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-        List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
-        List<String> CWDFileNames = Utils.plainFilenamesIn(CWD);
-
-        return CWDFileNames.contains(fileName)
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        List<String> allFileNamesInCWD = Utils.plainFilenamesIn(CWD);
+        return allFileNamesInCWD.contains(fileName)
                 && ((currentCommit.getHashMap().containsKey(fileName)
                 && !currentCommit.getHashMap().get(fileName).equals(
-                        Utils.sha1(Utils.readContents(Utils.join(CWD, fileName))))
-                && !stagingFileNames.contains(fileName))
-                || (stagingFileNames.contains(fileName)
+                Utils.sha1(Utils.readContents(Utils.join(CWD, fileName))))
+                && !allStagingFileNames.contains(fileName))
+                || (allStagingFileNames.contains(fileName)
                 && !Utils.sha1(Utils.readContents(Utils.join(STAGING_AREA_DIR, fileName))).equals(
-                        Utils.sha1(Utils.readContents(Utils.join(CWD, fileName))))));
+                Utils.sha1(Utils.readContents(Utils.join(CWD, fileName))))));
     }
 
     /**
@@ -314,15 +298,14 @@ public class Repository {
      */
     private static boolean isDeletedNotStaged(String fileName) {
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-        List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
-        List<String> removedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
-        List<String> CWDFileNames = Utils.plainFilenamesIn(CWD);
-
-        return (stagingFileNames.contains(fileName)
-                && !CWDFileNames.contains(fileName))
-                || (!removedFileNames.contains(fileName)
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        List<String> allRemovedFileNames = Utils.plainFilenamesIn(REMOVED_AREA_DIR);
+        List<String> allFileNamesInCWD = Utils.plainFilenamesIn(CWD);
+        return (allStagingFileNames.contains(fileName)
+                && !allFileNamesInCWD.contains(fileName))
+                || (!allRemovedFileNames.contains(fileName)
                 && currentCommit.getHashMap().containsKey(fileName)
-                && !CWDFileNames.contains(fileName));
+                && !allFileNamesInCWD.contains(fileName));
     }
 
     /**
@@ -330,32 +313,26 @@ public class Repository {
      */
     private static boolean isUntracked(String fileName) {
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-        List<String> stagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
-
-        return !stagingFileNames.contains(fileName)
+        List<String> allStagingFileNames = Utils.plainFilenamesIn(STAGING_AREA_DIR);
+        return !allStagingFileNames.contains(fileName)
                 && !currentCommit.getHashMap().containsKey(fileName);
     }
 
     public static void checkoutFile(String fileName) {
         checkFileExist(HEAD, fileName);
-
         Commit headCommit = Utils.readHeadCommit(HEAD);
         File currentFile = Utils.join(CWD, fileName);
         String headFileHash = headCommit.getHashMap().get(fileName);
-
         Utils.writeContents(currentFile, Utils.readContents(Utils.join(BLOBS_DIR, headFileHash)));
     }
 
     public static void checkoutFile(String commitId, String fileName) {
         commitId = getFullCommitId(commitId);
-
         checkCommitExist(commitId);
         checkFileExist(COMMITS_DIR, commitId, fileName);
-
         Commit commit = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
         File currentFile = Utils.join(CWD, fileName);
         String fileHash = commit.getHashMap().get(fileName);
-
         Utils.writeContents(currentFile, Utils.readContents(Utils.join(BLOBS_DIR, fileHash)));
     }
 
@@ -363,12 +340,9 @@ public class Repository {
         checkBranchExist(branchName);
         checkCheckoutNotCurrentBranch(branchName);
         checkUntrackedFileNotChanged(HEADS_DIR, branchName);
-
         replaceFilesInCWD(HEADS_DIR, branchName);
-
         clearStagingArea();
         clearRemovedArea();
-
         Utils.writeContents(HEAD, branchName);
     }
 
@@ -381,23 +355,18 @@ public class Repository {
     public static void rmBranchCommand(String branchName) {
         checkBranchNameExist(branchName);
         checkRemoveNotCurrentBranch(branchName);
-
         File branch = Utils.join(HEADS_DIR, branchName);
         branch.delete();
     }
 
     public static void resetCommand(String commitId) {
         commitId = getFullCommitId(commitId);
-
         checkCommitExist(commitId);
         checkUntrackedFileNotChanged(COMMITS_DIR, commitId);
-
         replaceFilesInCWD(COMMITS_DIR, commitId);
-
         Commit commit = Utils.readObject(Utils.join(COMMITS_DIR, commitId), Commit.class);
         File currentBranch = Utils.readHeadBranch(HEAD);
         Utils.writeContents(currentBranch, commit.getId());
-
         clearStagingArea();
         clearRemovedArea();
     }
@@ -409,17 +378,14 @@ public class Repository {
         checkUntrackedFileNotChanged(HEADS_DIR, branchName);
         checkAncestorBranch(branchName);
         checkFastForward(branchName);
-
         Commit splitPoint = getSplitPoint(branchName);
         Commit currentBranch = Utils.readHeadCommit(HEAD);
         Commit givenBranch = Utils.readBranchHeadCommit(branchName);
         List<String> allFileNames = getAllFileNamesInMerge(splitPoint, currentBranch, givenBranch);
-
         var splitPointMap = splitPoint.getHashMap();
         var currentBranchMap = currentBranch.getHashMap();
         var givenBranchMap = givenBranch.getHashMap();
         boolean isConflictMerge = false;
-
         for (var fileName : allFileNames) {
             if (isCase1(splitPointMap, currentBranchMap, givenBranchMap, fileName)) {
                 checkoutFile(givenBranch.getId(), fileName);
@@ -454,7 +420,6 @@ public class Repository {
                 addCommand(fileName);
             }
         }
-
         commitCommand("Merged " + branchName + " into " + Utils.readContentsAsString(HEAD) + ".",
                 givenBranch.getId());
         if (isConflictMerge) {
@@ -649,9 +614,9 @@ public class Repository {
      * in current branch is deleted
      */
     private static boolean isCase10(TreeMap<String, String> splitPointMap,
-                                   TreeMap<String, String> currentBranchMap,
-                                   TreeMap<String, String> givenBranchMap,
-                                   String fileName) {
+                                    TreeMap<String, String> currentBranchMap,
+                                    TreeMap<String, String> givenBranchMap,
+                                    String fileName) {
         return splitPointMap.containsKey(fileName)
                 && !currentBranchMap.containsKey(fileName)
                 && givenBranchMap.containsKey(fileName)
@@ -662,21 +627,17 @@ public class Repository {
                                            TreeMap<String, String> givenBranchMap,
                                            String fileName) {
         String mergedContent = "";
-
         mergedContent += "<<<<<<< HEAD\n";
         if (currentBranchMap != null) {
             mergedContent += Utils.readContentsAsString(
-                Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
+                    Utils.join(BLOBS_DIR, currentBranchMap.get(fileName)));
         }
-
         mergedContent += "=======\n";
         if (givenBranchMap != null) {
             mergedContent += Utils.readContentsAsString(
                     Utils.join(BLOBS_DIR, givenBranchMap.get(fileName)));
         }
-
         mergedContent += ">>>>>>>\n";
-
         return mergedContent;
     }
 
@@ -760,13 +721,11 @@ public class Repository {
         Commit currentCommit = Utils.readHeadCommit(HEAD);
         List<String> allFileNames = Utils.plainFilenamesIn(CWD);
         Commit commit = null;
-
         if (dir.equals(COMMITS_DIR)) {
             commit = Utils.readObject(Utils.join(dir, name), Commit.class);
         } else if (dir.equals(HEADS_DIR)) {
             commit = Utils.readBranchHeadCommit(name);
         }
-
         for (var fileName : allFileNames) {
             if (!currentCommit.getHashMap().containsKey(fileName)
                     && commit.getHashMap().containsKey(fileName)) {
@@ -779,7 +738,6 @@ public class Repository {
     private static void checkAncestorBranch(String branchName) {
         Commit branchHead = Utils.readBranchHeadCommit(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-
         while (true) {
             if (currentCommit.getParentCommitId() == null) {
                 if (currentCommit.equals(branchHead)) {
@@ -798,7 +756,6 @@ public class Repository {
     private static void checkFastForward(String branchName) {
         Commit branchHead = Utils.readBranchHeadCommit(branchName);
         Commit currentCommit = Utils.readHeadCommit(HEAD);
-
         while (true) {
             if (branchHead.getParentCommitId() == null) {
                 if (branchHead.equals(currentCommit)) {
@@ -887,13 +844,11 @@ public class Repository {
     private static Commit getSplitPoint(String branchName) {
         Commit currentBranch = Utils.readHeadCommit(HEAD);
         Commit givenBranch = Utils.readBranchHeadCommit(branchName);
-
         // record the commit that can be traversed from currentBranch
         Set<String> s = new HashSet<>();
         Queue<Commit> q = new LinkedList<>();
         s.add(currentBranch.getId());
         q.offer(currentBranch);
-
         while (!q.isEmpty()) {
             Commit c = q.poll();
             if (c.getParentCommitId() != null) {
@@ -909,9 +864,7 @@ public class Repository {
                 q.offer(t);
             }
         }
-
         q.offer(givenBranch);
-
         while (!q.isEmpty()) {
             Commit c = q.poll();
             if (c.getParentCommitId() != null) {
@@ -931,7 +884,6 @@ public class Repository {
                 q.offer(t);
             }
         }
-
         assert false;
         return null;
     }
@@ -952,20 +904,17 @@ public class Repository {
      * The commit can be read from COMMITS_DIR or HEADS_DIR. */
     private static void replaceFilesInCWD(File dir, String name) {
         Commit commit = null;
-
         if (dir.equals(COMMITS_DIR)) {
             commit = Utils.readObject(Utils.join(dir, name), Commit.class);
         } else if (dir.equals(HEADS_DIR)) {
             commit = Utils.readBranchHeadCommit(name);
         }
-
         List<String> allFileNames = Utils.plainFilenamesIn(CWD);
         for (var fileName : allFileNames) {
             if (!commit.getHashMap().containsKey(fileName)) {
                 Utils.restrictedDelete(fileName);
             }
         }
-
         for (var entry : commit.getHashMap().entrySet()) {
             File f = Utils.join(CWD, entry.getKey());
             Utils.writeContents(f, Utils.readContents(Utils.join(BLOBS_DIR, entry.getValue())));
